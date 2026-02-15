@@ -1,0 +1,17 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="logoutGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#ff4757" />
+            <stop offset="1" stop-color="#ff6b81" />
+        </linearGradient>
+        <radialGradient id="logoutShadow" cx="32" cy="62" rx="20" ry="5" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#000" stop-opacity="0.2" />
+            <stop offset="1" stop-color="#000" stop-opacity="0" />
+        </radialGradient>
+    </defs>
+    <ellipse cx="32" cy="62" rx="20" ry="5" fill="url(#logoutShadow)" />
+    <path d="M40 10 H14 V54 H40" stroke="#747d8c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M30 32 H54 M54 32 L44 22 M54 32 L44 42" stroke="#ced6e0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 2)" />
+    <path d="M30 32 H54 M54 32 L44 22 M54 32 L44 42" stroke="url(#logoutGrad)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M34 28 H50" stroke="white" stroke-width="2" stroke-opacity="0.4" stroke-linecap="round" />
+</svg>

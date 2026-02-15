@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <radialGradient id="pinGrad" cx="32" cy="24" r="22" fx="24" fy="16" gradientUnits="userSpaceOnUse">
+            <stop offset="0.2" stop-color="#ff7979" />
+            <stop offset="1" stop-color="#eb2f06" />
+        </radialGradient>
+        <radialGradient id="pinShadow" cx="32" cy="60" rx="8" ry="3" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#000" stop-opacity="0.3" />
+            <stop offset="1" stop-color="#000" stop-opacity="0" />
+        </radialGradient>
+    </defs>
+    <ellipse cx="32" cy="60" rx="8" ry="3" fill="url(#pinShadow)" />
+    <path d="M32 2 C18 2, 8 12, 8 26 C8 42, 32 62, 32 62 C32 62, 56 42, 56 26 C56 12, 46 2, 32 2 Z" fill="url(#pinGrad)" />
+    <circle cx="32" cy="26" r="8" fill="#fff" fill-opacity="0.9" />
+</svg>

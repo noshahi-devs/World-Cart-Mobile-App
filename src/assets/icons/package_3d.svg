@@ -1,0 +1,25 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="boxFront" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#F8EFBA" />
+            <stop offset="1" stop-color="#E58E26" />
+        </linearGradient>
+        <linearGradient id="boxTop" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#FECA57" />
+            <stop offset="1" stop-color="#F8C291" />
+        </linearGradient>
+        <linearGradient id="boxSide" x1="0" y1="0" x2="64" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#E58E26" />
+            <stop offset="1" stop-color="#B76E18" />
+        </linearGradient>
+        <radialGradient id="boxShadow" cx="32" cy="62" rx="20" ry="6" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#000" stop-opacity="0.2" />
+            <stop offset="1" stop-color="#000" stop-opacity="0" />
+        </radialGradient>
+    </defs>
+    <ellipse cx="32" cy="62" rx="20" ry="6" fill="url(#boxShadow)" />
+    <path d="M32 4 L60 20 L32 36 L4 20 Z" fill="url(#boxTop)" />
+    <path d="M4 20 L32 36 V60 L4 44 Z" fill="url(#boxFront)" />
+    <path d="M60 20 L60 44 L32 60 V36 Z" fill="url(#boxSide)" />
+    <path d="M32 4 L32 36 M4 20 L60 20" stroke="#D35400" stroke-width="1" stroke-opacity="0.5" />
+</svg>

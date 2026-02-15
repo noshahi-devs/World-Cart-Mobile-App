@@ -1,0 +1,27 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="homeRoofGrad" x1="32" y1="4" x2="32" y2="36" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#3498db" />
+            <stop offset="1" stop-color="#2980b9" />
+        </linearGradient>
+        <linearGradient id="homeWallGrad" x1="16" y1="28" x2="16" y2="58" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#ecf0f1" />
+            <stop offset="1" stop-color="#bdc3c7" />
+        </linearGradient>
+        <linearGradient id="homeDoorGrad" x1="32" y1="36" x2="32" y2="58" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#34495e" />
+            <stop offset="1" stop-color="#2c3e50" />
+        </linearGradient>
+        <radialGradient id="homeShadow" cx="32" cy="58" rx="24" ry="6" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#000" stop-opacity="0.2" />
+            <stop offset="1" stop-color="#000" stop-opacity="0" />
+        </radialGradient>
+    </defs>
+    <ellipse cx="32" cy="58" rx="24" ry="6" fill="url(#homeShadow)" />
+    <path d="M12 30 H52 V54 C52 56.2 50.2 58 48 58 H16 C13.8 58 12 56.2 12 54 V30 Z" fill="url(#homeWallGrad)" />
+    <path d="M26 42 H38 V58 H26 V42 Z" fill="url(#homeDoorGrad)" />
+    <circle cx="36" cy="50" r="1" fill="#f1c40f" />
+    <path d="M4 32 L32 4 L60 32 L56 36 L32 12 L8 36 Z" fill="url(#homeRoofGrad)" stroke="#1f618d" stroke-width="1" stroke-linejoin="round" />
+    <path d="M8 32 L32 8 L56 32" fill="url(#homeRoofGrad)" />
+    <path d="M18 24 L32 10 L46 24" stroke="white" stroke-width="2" stroke-opacity="0.3" stroke-linecap="round" fill="none" />
+</svg>

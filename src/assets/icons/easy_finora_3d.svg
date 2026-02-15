@@ -1,0 +1,17 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="efGrad" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#2ecc71" />
+            <stop offset="1" stop-color="#27ae60" />
+        </linearGradient>
+        <radialGradient id="efShadow" cx="32" cy="58" rx="20" ry="6" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#000" stop-opacity="0.2" />
+            <stop offset="1" stop-color="#000" stop-opacity="0" />
+        </radialGradient>
+    </defs>
+    <ellipse cx="32" cy="58" rx="20" ry="6" fill="url(#efShadow)" />
+    <rect x="8" y="10" width="48" height="44" rx="12" fill="url(#efGrad)" />
+    <rect x="20" y="24" width="24" height="18" rx="3" fill="white" />
+    <path d="M20 28 H44" stroke="#bdc3c7" stroke-width="1" opacity="0.5" />
+    <circle cx="38" cy="33" r="2" fill="#27ae60" />
+</svg>
