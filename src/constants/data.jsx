@@ -274,3 +274,8 @@ export const paymentMethods = [
         isDefault: false
     }
 ];
+
+export const aboutData = {
+    title: 'The World-Cart Evolution',
+    message: 'World-Cart is the definitive future of the global 3D e-commerce experience.\n\n🌏 OUR VISION\nWe believe shopping should be extraordinary. By combining cutting-edge 3D rendering with seamless logistics, we bring the premium store experience directly to your fingertips.\n\n💎 UNCOMPROMISED QUALITY\nEvery seller on our platform undergoes a rigorous 5-step verification process. From material sourcing to final delivery, we ensure that every product meets our "Elite Standard".\n\n🚀 INNOVATION AT SCALE\n● Presence: Serving customers in over 50+ countries.\n● Network: Partnered with 100,000+ verified premium brands.\n● Logistics: Real-time global tracking with eco-friendly packaging.'
+};

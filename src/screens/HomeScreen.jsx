@@ -14,7 +14,7 @@ import CustomModal from '../components/CustomModal';
 import Header from '../components/Header';
 import { Search3D, Close3D } from '../components/ThreeDIcons';
 import { useCart } from '../context/CartContext';
-import { categories, banners, promoBanner } from '../constants/data';
+import { categories, banners, promoBanner, aboutData } from '../constants/data';
 import { COLORS, SIZES } from '../constants/theme';
 
 // New Components
@@ -30,6 +30,7 @@ const HomeScreen = ({ navigation }) => {
     const [isAnimating, setIsAnimating] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [showModal, setShowModal] = useState(false);
+    const [showAboutModal, setShowAboutModal] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const scrollY = useRef(new Animated.Value(0)).current;
     const searchAnim = useRef(new Animated.Value(0)).current;
@@ -99,6 +100,7 @@ const HomeScreen = ({ navigation }) => {
             <Header
                 title="World-Cart"
                 leftIcon="logo"
+                onLeftPress={() => setShowAboutModal(true)}
                 rightIcon={showSearch ? "close" : "search"}
                 onRightPress={toggleSearch}
             />
@@ -213,11 +215,29 @@ const HomeScreen = ({ navigation }) => {
             <CustomModal
                 visible={showModal}
                 onClose={() => setShowModal(false)}
-                title="Welcome!"
-                message="Explore the best products in 3D style."
                 primaryButton={{
                     text: "Shop Now",
                     onPress: () => setShowModal(false)
+                }}
+            />
+
+            {/* About Modal */}
+            <CustomModal
+                visible={showAboutModal}
+                onClose={() => setShowAboutModal(false)}
+                title={aboutData.title}
+                message={aboutData.message}
+                type="info"
+                icon={
+                    <Image
+                        source={require('../assets/World-Cart.png')}
+                        style={{ width: 80, height: 80, borderRadius: 40 }}
+                        resizeMode="cover"
+                    />
+                }
+                primaryButton={{
+                    text: "Got it",
+                    onPress: () => setShowAboutModal(false)
                 }}
             />
         </SafeAreaView>

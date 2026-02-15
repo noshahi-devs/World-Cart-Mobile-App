@@ -16,6 +16,7 @@ import Button from '../components/Button';
 import CustomModal from '../components/CustomModal';
 import Header from '../components/Header';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
+import { aboutData } from '../constants/data';
 
 const CartScreen = ({ navigation }) => {
     const { cartItems, updateCartItem, removeFromCart, getCartTotal, getCartItemCount, clearCart } = useCart();
@@ -68,6 +69,25 @@ const CartScreen = ({ navigation }) => {
                 onPress: () => clearCart(),
             },
             secondaryButton: { text: 'Cancel' },
+        });
+    };
+
+    const handleAboutPress = () => {
+        showConfirmModal({
+            title: aboutData.title,
+            message: aboutData.message,
+            type: 'info',
+            icon: (
+                <Image
+                    source={require('../assets/World-Cart.png')}
+                    style={{ width: 80, height: 80, borderRadius: 40 }}
+                    resizeMode="cover"
+                />
+            ),
+            primaryButton: {
+                text: "Got it",
+                onPress: () => setShowModal(false)
+            }
         });
     };
 
@@ -170,6 +190,7 @@ const CartScreen = ({ navigation }) => {
                 leftIcon="arrow-left"
                 onLeftPress={() => navigation.goBack()}
                 rightIcon="logo"
+                onRightPress={handleAboutPress}
             />
 
             {cartItems.length === 0 ? (
