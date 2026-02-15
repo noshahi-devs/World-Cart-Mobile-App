@@ -7,16 +7,134 @@ import {
     FlatList,
     StyleSheet,
     Animated,
+    Easing,
 } from 'react-native';
 import { rf, moderateScale } from '../utils/responsive';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Cart3D, Minus3D, Plus3D, Trash3D } from '../components/ThreeDIcons';
+import { Cart3D, Minus3D, Plus3D, Trash3D, Package3D, Heart3D, Crown3D } from '../components/ThreeDIcons';
 import { useCart } from '../context/CartContext';
 import Button from '../components/Button';
 import CustomModal from '../components/CustomModal';
 import Header from '../components/Header';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { aboutData } from '../constants/data';
+
+const EmptyCartView = ({ navigation }) => {
+    // Animation Values
+    const floatAnim = React.useRef(new Animated.Value(0)).current;
+
+    // Items coming out
+    const item1Anim = React.useRef(new Animated.Value(0)).current;
+    const item2Anim = React.useRef(new Animated.Value(0)).current;
+    const item3Anim = React.useRef(new Animated.Value(0)).current;
+
+    React.useEffect(() => {
+        // Cart Float Loop
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(floatAnim, {
+                    toValue: 1,
+                    duration: 2000,
+                    easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: true
+                }),
+                Animated.timing(floatAnim, {
+                    toValue: 0,
+                    duration: 2000,
+                    easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: true
+                })
+            ])
+        ).start();
+
+        // Animated Items Logic
+        const animateItem = (anim, delay) => {
+            Animated.loop(
+                Animated.sequence([
+                    Animated.delay(delay),
+                    Animated.timing(anim, {
+                        toValue: 1,
+                        duration: 3000,
+                        easing: Easing.out(Easing.cubic),
+                        useNativeDriver: true
+                    }),
+                    Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true })
+                ])
+            ).start();
+        };
+
+        animateItem(item1Anim, 0);
+        animateItem(item2Anim, 1000);
+        animateItem(item3Anim, 2000);
+    }, []);
+
+    // Interpolations
+    const cartTranslateY = floatAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, -15]
+    });
+
+    const getItemStyle = (anim, xOffset, rotate) => ({
+        opacity: anim.interpolate({
+            inputRange: [0, 0.2, 0.8, 1],
+            outputRange: [0, 1, 1, 0]
+        }),
+        transform: [
+            {
+                translateY: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -120] // Moves up
+                })
+            },
+            {
+                translateX: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, xOffset] // Moves sideways
+                })
+            },
+            {
+                scale: anim.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0.5, 1.1, 0.8]
+                })
+            },
+            { rotate: rotate }
+        ]
+    });
+
+    return (
+        <View style={styles.emptyContainer}>
+            <View style={styles.animationContainer}>
+                {/* Floating Items (Behind Cart) */}
+                <Animated.View style={[styles.floatingItem, getItemStyle(item1Anim, -50, '-15deg')]}>
+                    <Package3D size={32} color={COLORS.primary} />
+                </Animated.View>
+                <Animated.View style={[styles.floatingItem, getItemStyle(item2Anim, 0, '0deg')]}>
+                    <Heart3D size={30} color="#E91E63" />
+                </Animated.View>
+                <Animated.View style={[styles.floatingItem, getItemStyle(item3Anim, 50, '15deg')]}>
+                    <Crown3D size={28} color="#FFC107" />
+                </Animated.View>
+
+                {/* Main Cart */}
+                <Animated.View style={[styles.emptyIconCircle, { transform: [{ translateY: cartTranslateY }] }]}>
+                    <Cart3D size={56} color={COLORS.gray[400]} />
+                </Animated.View>
+            </View>
+
+            <Text style={styles.emptyTitle}>Your Cart is Empty</Text>
+            <Text style={styles.emptyText}>
+                Looks like you haven't added anything to your cart yet!
+            </Text>
+            <Button
+                title="Start Shopping"
+                onPress={() => navigation.navigate('Home')}
+                size="large"
+                style={styles.shopButton}
+            />
+        </View>
+    );
+};
 
 const CartScreen = ({ navigation }) => {
     const { cartItems, updateCartItem, removeFromCart, getCartTotal, getCartItemCount, clearCart } = useCart();
@@ -165,24 +283,6 @@ const CartScreen = ({ navigation }) => {
         </View>
     );
 
-    const renderEmptyCart = () => (
-        <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-                <Cart3D size={56} color={COLORS.gray[400]} />
-            </View>
-            <Text style={styles.emptyTitle}>Your Cart is Empty</Text>
-            <Text style={styles.emptyText}>
-                Looks like you haven't added anything to your cart yet!
-            </Text>
-            <Button
-                title="Start Shopping"
-                onPress={() => navigation.navigate('Home')}
-                size="large"
-                style={styles.shopButton}
-            />
-        </View>
-    );
-
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <Header
@@ -194,7 +294,7 @@ const CartScreen = ({ navigation }) => {
             />
 
             {cartItems.length === 0 ? (
-                renderEmptyCart()
+                <EmptyCartView navigation={navigation} />
             ) : (
                 <>
                     <FlatList
@@ -234,7 +334,8 @@ const CartScreen = ({ navigation }) => {
                         </View>
                     </View>
                 </>
-            )}
+            )
+            }
 
             {/* Custom Modal */}
             <CustomModal
@@ -242,7 +343,7 @@ const CartScreen = ({ navigation }) => {
                 onClose={() => setShowModal(false)}
                 {...modalConfig}
             />
-        </SafeAreaView>
+        </SafeAreaView >
     );
 };
 
@@ -465,6 +566,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: SIZES.padding * 2,
     },
+    animationContainer: {
+        height: 180,
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    floatingItem: {
+        position: 'absolute',
+        top: 100, // Start position inside/behind the cart
+        zIndex: 0,
+    },
     emptyIconCircle: {
         width: 110,
         height: 110,
@@ -472,13 +584,13 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.gray[100],
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 28,
         // Clean spread shadow
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.12,
         shadowRadius: 10,
         elevation: 5,
+        zIndex: 5,
     },
     emptyTitle: {
         fontSize: SIZES.h2,

@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Smart Store Backend URL
-const BASE_URL = 'https://app-elicom-backend.azurewebsites.net';
+const BASE_URL = 'https://elicom-api.noshahidev.com';
 
 const apiClient = axios.create({
     baseURL: BASE_URL,
