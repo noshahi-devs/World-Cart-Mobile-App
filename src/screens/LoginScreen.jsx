@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import FloatingLabelInput from '../components/FloatingLabelInput';
+import { Ionicons } from '@expo/vector-icons';
 
 const LoginScreen = () => {
     const navigation = useNavigation();
@@ -29,27 +30,56 @@ const LoginScreen = () => {
     const [error, setError] = useState('');
     const insets = useSafeAreaInsets();
 
+    const [emailError, setEmailError] = useState(false);
+    const [passwordError, setPasswordError] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+
     const passwordRef = useRef(null);
 
     const handleLogin = async () => {
-        if (!email || !password) {
+        // Reset errors
+        setEmailError(false);
+        setPasswordError(false);
+        setError('');
+
+        let hasError = false;
+        if (!email) {
+            setEmailError(true);
+            hasError = true;
+        }
+        if (!password) {
+            setPasswordError(true);
+            hasError = true;
+        }
+
+        if (hasError) {
             setError('Please fill in all fields');
             return;
         }
 
         const result = await login(email, password, rememberMe);
-        if (result.success) {
-            const { returnTo, ...otherParams } = route.params || {};
 
-            if (returnTo) {
-                navigation.replace(returnTo, otherParams);
-            } else if (navigation.canGoBack()) {
-                navigation.goBack();
-            } else {
-                navigation.replace('Main');
-            }
+        if (result.success) {
+            setShowSuccessModal(true);
+
+            // Wait for 1.5 seconds to show success message, then navigate
+            setTimeout(() => {
+                setShowSuccessModal(false);
+                const { returnTo, ...otherParams } = route.params || {};
+
+                if (returnTo) {
+                    navigation.replace(returnTo, otherParams);
+                } else if (navigation.canGoBack()) {
+                    navigation.goBack();
+                } else {
+                    navigation.replace('Main');
+                }
+            }, 1500);
         } else {
             setError(result.message);
+            // Highlight inputs on generic failure too
+            setEmailError(true);
+            setPasswordError(true);
         }
     };
 
@@ -60,6 +90,19 @@ const LoginScreen = () => {
                 leftIcon="arrow-left"
                 onLeftPress={() => navigation.goBack()}
             />
+
+            {/* Success Modal Overlay */}
+            {showSuccessModal && (
+                <View style={styles.successOverlay}>
+                    <View style={styles.successModal}>
+                        <View style={styles.successIconContainer}>
+                            <Ionicons name="checkmark-circle" size={60} color={COLORS.primary} />
+                        </View>
+                        <Text style={styles.successText}>Login Successful!</Text>
+                        <Text style={styles.successSubText}>Welcome back.</Text>
+                    </View>
+                </View>
+            )}
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -88,22 +131,24 @@ const LoginScreen = () => {
                                     <FloatingLabelInput
                                         label="Email or Phone Number"
                                         value={email}
-                                        onChangeText={(text) => { setEmail(text); setError(''); }}
+                                        onChangeText={(text) => { setEmail(text); setEmailError(false); setError(''); }}
                                         autoCapitalize="none"
                                         keyboardType="email-address"
                                         returnKeyType="next"
                                         onSubmitEditing={() => passwordRef.current?.focus()}
                                         blurOnSubmit={false}
+                                        error={emailError}
                                     />
 
                                     <FloatingLabelInput
                                         innerRef={passwordRef}
                                         label="Password"
                                         value={password}
-                                        onChangeText={(text) => { setPassword(text); setError(''); }}
+                                        onChangeText={(text) => { setPassword(text); setPasswordError(false); setError(''); }}
                                         isPassword={true}
                                         returnKeyType="done"
                                         onSubmitEditing={handleLogin}
+                                        error={passwordError}
                                     />
                                 </View>
 
@@ -264,7 +309,6 @@ const styles = StyleSheet.create({
         fontSize: rf(16),
         fontWeight: '900',
         letterSpacing: 1,
-        textTransform: 'uppercase',
     },
     footer: {
         flexDirection: 'row',
@@ -287,6 +331,47 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         textAlign: 'center',
         fontWeight: '600',
+    },
+    successOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 999,
+    },
+    successModal: {
+        backgroundColor: COLORS.white,
+        width: '80%',
+        maxWidth: 340,
+        borderRadius: 24,
+        padding: 30,
+        alignItems: 'center',
+        shadowColor: COLORS.black,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 20,
+        transform: [{ scale: 1.1 }],
+    },
+    successIconContainer: {
+        marginBottom: 20,
+        transform: [{ scale: 1.2 }],
+    },
+    successText: {
+        fontSize: rf(22),
+        fontWeight: '900',
+        color: COLORS.black,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    successSubText: {
+        fontSize: rf(15),
+        color: COLORS.gray[500],
+        textAlign: 'center',
     }
 });
 

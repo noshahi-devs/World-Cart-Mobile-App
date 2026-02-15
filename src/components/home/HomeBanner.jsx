@@ -8,6 +8,7 @@ import {
     StyleSheet,
     Animated,
     useWindowDimensions,
+    Platform,
 } from 'react-native';
 import { COLORS, SHADOWS, SIZES } from '../../constants/theme';
 import { moderateScale, rf } from '../../utils/responsive';
@@ -331,9 +332,21 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         color: COLORS.white,
         lineHeight: rf(32),
-        textShadowColor: 'rgba(0,0,0,0.5)',
-        textShadowOffset: { width: 1, height: 2 },
-        textShadowRadius: 4,
+        ...Platform.select({
+            ios: {
+                textShadowColor: 'rgba(0,0,0,0.5)',
+                textShadowOffset: { width: 1, height: 2 },
+                textShadowRadius: 4,
+            },
+            android: {
+                textShadowColor: 'rgba(0,0,0,0.5)',
+                textShadowOffset: { width: 1, height: 2 },
+                textShadowRadius: 4,
+            },
+            web: {
+                textShadow: '1px 2px 4px rgba(0,0,0,0.5)',
+            },
+        }),
     },
     bannerSubtitle: {
         fontSize: rf(16),

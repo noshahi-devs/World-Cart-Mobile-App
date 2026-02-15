@@ -108,7 +108,11 @@ const VerificationScreen = () => {
                     {/* 3D-like Floating Icon Container */}
                     <Animated.View style={[styles.iconContainer, { transform: [{ translateY }] }]}>
                         <View style={styles.iconCircle}>
-                            <Ionicons name="mail" size={rf(80)} color={GoogleColors.red} />
+                            <Image
+                                source={{ uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Gmail_icon_%282020%29.svg/512px-Gmail_icon_%282020%29.svg.png" }}
+                                style={{ width: '60%', height: '60%' }}
+                                resizeMode="contain"
+                            />
                         </View>
                         <View style={styles.iconShadow} />
                     </Animated.View>

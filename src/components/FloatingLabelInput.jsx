@@ -15,7 +15,8 @@ const FloatingLabelInput = ({
     returnKeyType,
     onSubmitEditing,
     blurOnSubmit,
-    innerRef
+    innerRef,
+    error // New error prop
 }) => {
     const [isFocused, setIsFocused] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -43,8 +44,8 @@ const FloatingLabelInput = ({
         }),
         color: animatedValue.interpolate({
             inputRange: [0, 1],
-            // Use gray[600] instead of gray[400] for better visibility
-            outputRange: [COLORS.gray[600], COLORS.primary],
+            // Use gray[600] instead of gray[400] for better visibility; error logic added
+            outputRange: [error ? COLORS.danger : COLORS.gray[600], error ? COLORS.danger : COLORS.primary],
         }),
         backgroundColor: COLORS.white, // Match background
         paddingHorizontal: 4,
@@ -58,7 +59,7 @@ const FloatingLabelInput = ({
             </Animated.Text>
             <View style={[
                 styles.inputContainer,
-                { borderColor: isFocused ? COLORS.primary : COLORS.gray[200] }
+                { borderColor: error ? COLORS.danger : (isFocused ? COLORS.primary : COLORS.gray[200]) }
             ]}>
                 <TextInput
                     ref={innerRef}

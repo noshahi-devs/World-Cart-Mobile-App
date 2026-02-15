@@ -39,6 +39,8 @@ const SignupScreen = () => {
     const [showCountryPicker, setShowCountryPicker] = useState(false);
     const [isPhoneFocused, setIsPhoneFocused] = useState(false);
 
+    const [errors, setErrors] = useState({});
+
     // Refs for keyboard navigation
     const firstNameRef = useRef(null);
     const lastNameRef = useRef(null);
@@ -99,7 +101,7 @@ const SignupScreen = () => {
         }),
         color: phoneLabelAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [COLORS.gray[500], COLORS.primary],
+            outputRange: [propsError('phone') ? COLORS.danger : COLORS.gray[500], propsError('phone') ? COLORS.danger : COLORS.primary],
         }),
         backgroundColor: phoneLabelAnim.interpolate({
             inputRange: [0, 1],
@@ -110,14 +112,32 @@ const SignupScreen = () => {
         zIndex: 10,
     };
 
+    function propsError(field) {
+        return errors[field] ? true : false;
+    }
+
     const handleSignup = async () => {
-        if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
-            setError('Please fill in all fields');
-            return;
-        }
+        let newErrors = {};
+        let isValid = true;
+
+        if (!firstName) { newErrors.firstName = true; isValid = false; }
+        if (!lastName) { newErrors.lastName = true; isValid = false; }
+        if (!email) { newErrors.email = true; isValid = false; }
+        if (!phone) { newErrors.phone = true; isValid = false; }
+        if (!password) { newErrors.password = true; isValid = false; }
+        if (!confirmPassword) { newErrors.confirmPassword = true; isValid = false; }
 
         if (password !== confirmPassword) {
             setError('Passwords do not match');
+            newErrors.password = true;
+            newErrors.confirmPassword = true;
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+
+        if (!isValid) {
+            setError('Please fill in check marked fields');
             return;
         }
 
@@ -173,27 +193,29 @@ const SignupScreen = () => {
                                         innerRef={firstNameRef}
                                         label="First Name"
                                         value={firstName}
-                                        onChangeText={setFirstName}
+                                        onChangeText={(text) => { setFirstName(text); setErrors({ ...errors, firstName: false }); }}
                                         returnKeyType="next"
                                         onSubmitEditing={() => lastNameRef.current?.focus()}
                                         blurOnSubmit={false}
+                                        error={errors.firstName}
                                     />
 
                                     <FloatingLabelInput
                                         innerRef={lastNameRef}
                                         label="Last Name"
                                         value={lastName}
-                                        onChangeText={setLastName}
+                                        onChangeText={(text) => { setLastName(text); setErrors({ ...errors, lastName: false }); }}
                                         returnKeyType="next"
                                         onSubmitEditing={() => phoneRef.current?.focus()}
                                         blurOnSubmit={false}
+                                        error={errors.lastName}
                                     />
 
                                     <View style={styles.phoneSection}>
                                         <Animated.Text style={phoneLabelStyle}>Phone Number</Animated.Text>
                                         <View style={[
                                             styles.phoneContainer,
-                                            { borderColor: isPhoneFocused ? COLORS.primary : COLORS.gray[200] }
+                                            { borderColor: errors.phone ? COLORS.danger : (isPhoneFocused ? COLORS.primary : COLORS.gray[200]) }
                                         ]}>
                                             <TouchableOpacity
                                                 style={styles.countrySelector}
@@ -210,7 +232,7 @@ const SignupScreen = () => {
                                                 placeholderTextColor={COLORS.gray[400]}
                                                 keyboardType="phone-pad"
                                                 value={phone}
-                                                onChangeText={setPhone}
+                                                onChangeText={(text) => { setPhone(text); setErrors({ ...errors, phone: false }); }}
                                                 onFocus={() => setIsPhoneFocused(true)}
                                                 onBlur={() => setIsPhoneFocused(false)}
                                                 returnKeyType="next"
@@ -253,33 +275,36 @@ const SignupScreen = () => {
                                         innerRef={emailRef}
                                         label="Email Address"
                                         value={email}
-                                        onChangeText={setEmail}
+                                        onChangeText={(text) => { setEmail(text); setErrors({ ...errors, email: false }); }}
                                         keyboardType="email-address"
                                         autoCapitalize="none"
                                         returnKeyType="next"
                                         onSubmitEditing={() => passwordRef.current?.focus()}
                                         blurOnSubmit={false}
+                                        error={errors.email}
                                     />
 
                                     <FloatingLabelInput
                                         innerRef={passwordRef}
                                         label="Password"
                                         value={password}
-                                        onChangeText={setPassword}
+                                        onChangeText={(text) => { setPassword(text); setErrors({ ...errors, password: false }); }}
                                         isPassword={true}
                                         returnKeyType="next"
                                         onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                                         blurOnSubmit={false}
+                                        error={errors.password}
                                     />
 
                                     <FloatingLabelInput
                                         innerRef={confirmPasswordRef}
                                         label="Confirm Password"
                                         value={confirmPassword}
-                                        onChangeText={setConfirmPassword}
+                                        onChangeText={(text) => { setConfirmPassword(text); setErrors({ ...errors, confirmPassword: false }); }}
                                         isPassword={true}
                                         returnKeyType="done"
                                         onSubmitEditing={handleSignup}
+                                        error={errors.confirmPassword}
                                     />
                                 </View>
 
@@ -444,7 +469,6 @@ const styles = StyleSheet.create({
         fontSize: rf(16),
         fontWeight: '900',
         letterSpacing: 1,
-        textTransform: 'uppercase',
     },
     footer: {
         flexDirection: 'row',

@@ -8,6 +8,7 @@ import {
     Animated,
     Dimensions,
     TouchableWithoutFeedback,
+    Platform,
 } from 'react-native';
 import { Check3D, Close3D, ShieldCheck3D } from './ThreeDIcons';
 import { COLORS, SIZES } from '../constants/theme';
@@ -243,11 +244,20 @@ const styles = StyleSheet.create({
         paddingTop: 50, // Increased top padding to accommodate the floating icon
         alignItems: 'center',
         // Strong 3D Shadow
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 15 },
-        shadowOpacity: 0.3,
-        shadowRadius: 25,
-        elevation: 20,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 15 },
+                shadowOpacity: 0.3,
+                shadowRadius: 25,
+            },
+            android: {
+                elevation: 20,
+            },
+            web: {
+                boxShadow: '0px 15px 25px rgba(0,0,0,0.3)',
+            },
+        }),
     },
     iconCircleWrapper: {
         position: 'absolute',
@@ -256,10 +266,20 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         backgroundColor: '#fff',
         padding: 5,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 15,
-        elevation: 12,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.3,
+                shadowRadius: 15,
+            },
+            android: {
+                elevation: 12,
+            },
+            web: {
+                boxShadow: '0px 10px 15px rgba(0,0,0,0.3)',
+            },
+        }),
         zIndex: 10,
     },
     iconCircle: {
@@ -287,11 +307,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         // Stronger 3D spread shadow for Right Button
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
-        elevation: 10,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 5 },
+                shadowOpacity: 0.35,
+                shadowRadius: 12,
+            },
+            android: {
+                elevation: 10,
+            },
+            web: {
+                boxShadow: '0px 5px 12px rgba(0,0,0,0.35)',
+            },
+        }),
     },
     primaryButtonText: {
         color: '#fff',
@@ -310,12 +339,20 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.gray[100],
         borderWidth: 1,
         borderColor: COLORS.gray[200],
-        // Matching shadow for Left Button
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 6,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 5 },
+                shadowOpacity: 0.15,
+                shadowRadius: 10,
+            },
+            android: {
+                elevation: 6,
+            },
+            web: {
+                boxShadow: '0px 5px 10px rgba(0,0,0,0.15)',
+            },
+        }),
     },
     secondaryButtonText: {
         color: COLORS.gray[700],
