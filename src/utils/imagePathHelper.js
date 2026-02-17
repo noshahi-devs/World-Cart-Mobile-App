@@ -30,7 +30,7 @@ export const resolveImagePath = (rawPath) => {
     }
 
     // Prepend Base URL (ensure no double slashes)
-    const baseUrl = "https://elicom-api.noshahidev.com";
+    const baseUrl = "https://app-elicom-backend.azurewebsites.net";
     const path = cleaned.startsWith('/') ? cleaned.substring(1) : cleaned;
 
     return `${baseUrl}/${path}`;

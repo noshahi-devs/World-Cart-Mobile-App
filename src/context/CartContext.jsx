@@ -1,21 +1,13 @@
 import React, { createContext, useContext, useState } from 'react';
-import { products as initialProducts } from '../constants/data';
 
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-    const [products, setProducts] = useState(initialProducts);
+    // Removed local products - now fetched from API in screens
     const [cartItems, setCartItems] = useState([]);
 
-    const toggleWishlist = (productId) => {
-        setProducts(prevProducts =>
-            prevProducts.map(product =>
-                product.id === productId
-                    ? { ...product, wishlisted: !product.wishlisted }
-                    : product
-            )
-        );
-    };
+    // Wishlist is now managed by backend API
+    // Removed toggleWishlist function
 
     const addToCart = (product, quantity = 1, size = null, color = null) => {
         setCartItems(prevCart => {
@@ -64,9 +56,7 @@ export const CartProvider = ({ children }) => {
 
     return (
         <CartContext.Provider value={{
-            products,
             cartItems,
-            toggleWishlist,
             addToCart,
             removeFromCart,
             updateCartItem,

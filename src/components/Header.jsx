@@ -33,7 +33,7 @@ const Header = ({ title, leftIcon, rightIcon, onLeftPress, onRightPress, badge }
                     <View style={[styles.iconButtonInner, { width: isLarge ? 50 : 44, height: isLarge ? 50 : 44 }]}>
                         {leftIcon === 'logo' ? (
                             <Image
-                                source={require('../assets/World-Cart.png')}
+                                source={require('../assets/icons/World-Cart.png')}
                                 style={[styles.logoImage, { width: isLarge ? 50 : 40, height: isLarge ? 50 : 40 }]}
                                 resizeMode="contain"
                             />
@@ -62,7 +62,7 @@ const Header = ({ title, leftIcon, rightIcon, onLeftPress, onRightPress, badge }
                     ]}>
                         {rightIcon === 'logo' ? (
                             <Image
-                                source={require('../assets/World-Cart.png')}
+                                source={require('../assets/icons/World-Cart.png')}
                                 style={[styles.logoImage, { width: isLarge ? 50 : 40, height: isLarge ? 50 : 40 }]}
                                 resizeMode="contain"
                             />

@@ -4,7 +4,7 @@ import resp, { moderateScale, rf } from '../utils/responsive';
 const { width, height } = resp;
 
 export const COLORS = {
-    primary: '#000000',
+    primary: '#1c71d8',
     secondary: '#FF3B30',
     success: '#4CAF50',
     warning: '#FFC107',

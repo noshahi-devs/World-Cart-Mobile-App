@@ -1,182 +1,181 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Image, Animated, Dimensions, StatusBar, Easing } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    Animated,
+    Dimensions,
+    StatusBar,
+    Easing,
+} from 'react-native';
+import Svg, { Defs, LinearGradient as SvgGradient, Stop, Rect } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
 const SplashScreen = ({ onFinish }) => {
     // Animation Values
     const fadeAnim = useRef(new Animated.Value(0)).current;
-    const scaleAnim = useRef(new Animated.Value(0.7)).current;
-    const breatheAnim = useRef(new Animated.Value(1)).current;
-    const progressWidth = useRef(new Animated.Value(0)).current;
+    const scaleAnim = useRef(new Animated.Value(0.85)).current;
+    const floatAnim = useRef(new Animated.Value(0)).current;
+    const progressAnim = useRef(new Animated.Value(0)).current;
+    const cartBounce = useRef(new Animated.Value(0)).current;
 
-    // Background Pulse Values - Syncing with breathing
-    const pulse1 = useRef(new Animated.Value(0)).current;
-    const pulse2 = useRef(new Animated.Value(0)).current;
-
-    // Text Reveal Values
-    const textY = useRef(new Animated.Value(20)).current;
-    const greetingFade = useRef(new Animated.Value(0)).current;
+    const [percentage, setPercentage] = useState(0);
 
     useEffect(() => {
-        // 1. Initial Reveal & Staggered Content Entry
-        Animated.sequence([
-            Animated.parallel([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 800,
-                    useNativeDriver: true,
-                }),
-                Animated.spring(scaleAnim, {
-                    toValue: 1,
-                    tension: 15,
-                    friction: 7,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(textY, {
-                    toValue: 0,
-                    duration: 800,
-                    easing: Easing.out(Easing.back(1.5)),
-                    useNativeDriver: true,
-                })
-            ]),
-            Animated.timing(greetingFade, {
+        // ===== LOGO ENTRANCE =====
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
                 toValue: 1,
-                duration: 600,
+                duration: 1000,
+                easing: Easing.out(Easing.ease),
                 useNativeDriver: true,
-            })
+            }),
+            Animated.spring(scaleAnim, {
+                toValue: 1,
+                friction: 5,
+                tension: 40,
+                useNativeDriver: true,
+            }),
         ]).start();
 
-        // 2. Master Sync: Breathing + Pulse Waves (4000ms Total Cycle)
-        const breatheIn = () => {
-            pulse1.setValue(0);
-            Animated.timing(pulse1, {
-                toValue: 1,
-                duration: 2500,
-                easing: Easing.out(Easing.quad),
-                useNativeDriver: true,
-            }).start();
+        // ===== FLOATING EFFECT =====
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(floatAnim, {
+                    toValue: -10,
+                    duration: 2000,
+                    easing: Easing.inOut(Easing.ease),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(floatAnim, {
+                    toValue: 0,
+                    duration: 2000,
+                    easing: Easing.inOut(Easing.ease),
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
 
-            Animated.timing(breatheAnim, {
-                toValue: 1.15,
-                duration: 2000,
-                easing: Easing.inOut(Easing.sin),
-                useNativeDriver: true,
-            }).start(() => breatheOut());
-        };
+        // ===== CART BOUNCE =====
+        Animated.loop(
+            Animated.sequence([
+                Animated.spring(cartBounce, {
+                    toValue: -8,
+                    friction: 4,
+                    tension: 80,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(cartBounce, {
+                    toValue: 0,
+                    friction: 4,
+                    tension: 80,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
 
-        const breatheOut = () => {
-            pulse2.setValue(0);
-            Animated.timing(pulse2, {
-                toValue: 1,
-                duration: 2500,
-                easing: Easing.out(Easing.quad),
-                useNativeDriver: true,
-            }).start();
+        // ===== PROGRESS =====
+        progressAnim.addListener(({ value }) => {
+            setPercentage(Math.floor(value * 100));
+        });
 
-            Animated.timing(breatheAnim, {
-                toValue: 1,
-                duration: 2000,
-                easing: Easing.inOut(Easing.sin),
-                useNativeDriver: true,
-            }).start(() => breatheIn());
-        };
-
-        breatheIn();
-
-        // 3. Progress Bar Fill
-        Animated.timing(progressWidth, {
+        Animated.timing(progressAnim, {
             toValue: 1,
-            duration: 3800,
-            easing: Easing.inOut(Easing.quad),
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease),
             useNativeDriver: false,
         }).start();
 
-        // 4. Exit Logic
-        const exitTimer = setTimeout(() => {
+        // ===== EXIT =====
+        const timer = setTimeout(() => {
             Animated.timing(fadeAnim, {
                 toValue: 0,
                 duration: 600,
-                easing: Easing.inOut(Easing.quad),
                 useNativeDriver: true,
-            }).start(() => {
-                if (onFinish) onFinish();
-            });
+            }).start(() => onFinish && onFinish());
         }, 4500);
 
-        return () => clearTimeout(exitTimer);
+        return () => clearTimeout(timer);
     }, []);
 
-    // Interpolations for Pulse Waves
-    const pulseScale1 = pulse1.interpolate({
+    const progressWidth = progressAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [1, 2.5]
-    });
-    const pulseOpacity1 = pulse1.interpolate({
-        inputRange: [0, 0.4, 1],
-        outputRange: [0, 0.2, 0]
-    });
-
-    const pulseScale2 = pulse2.interpolate({
-        inputRange: [0, 1],
-        outputRange: [1, 2.5]
-    });
-    const pulseOpacity2 = pulse2.interpolate({
-        inputRange: [0, 0.4, 1],
-        outputRange: [0, 0.2, 0]
-    });
-
-    const progressBar = progressWidth.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0%', '100%']
+        outputRange: ['0%', '100%'],
     });
 
     return (
         <View style={styles.container}>
-            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+            <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
-            <View style={styles.pulseContainer}>
-                <Animated.View style={[styles.pulse, { transform: [{ scale: pulseScale1 }], opacity: pulseOpacity1 }]} />
-                <Animated.View style={[styles.pulse, { transform: [{ scale: pulseScale2 }], opacity: pulseOpacity2 }]} />
-            </View>
+            {/* SVG BACKGROUND GRADIENT */}
+            <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+                <Defs>
+                    <SvgGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <Stop offset="0" stopColor="#0F0F1A" />
+                        <Stop offset="0.5" stopColor="#1A1A2E" />
+                        <Stop offset="1" stopColor="#16213E" />
+                    </SvgGradient>
+                </Defs>
+                <Rect width="100%" height="100%" fill="url(#grad)" />
+            </Svg>
 
-            <Animated.View style={[
-                styles.content,
-                {
-                    opacity: fadeAnim,
-                    transform: [{ scale: scaleAnim }]
-                }
-            ]}>
-                <Animated.View style={[
-                    styles.logoWrapper,
-                    { transform: [{ scale: breatheAnim }] }
-                ]}>
-                    <View style={styles.logoCard}>
-                        <Image
-                            source={require('../assets/Main-World-Cart.png')}
-                            style={styles.logo}
-                            resizeMode="contain"
-                        />
-                    </View>
-                </Animated.View>
+            {/* LOGO */}
+            <Animated.View
+                style={[
+                    styles.logoContainer,
+                    {
+                        opacity: fadeAnim,
+                        transform: [
+                            { scale: scaleAnim },
+                            { translateY: floatAnim },
+                        ],
+                    },
+                ]}
+            >
+                <View style={styles.logoGlow} />
 
-                <Animated.View style={{ transform: [{ translateY: textY }] }}>
-                    <Text style={styles.appName}>WORLD-CART</Text>
-                    <View style={styles.accentLine} />
-                </Animated.View>
-
-                <Animated.View style={[styles.greetingWrapper, { opacity: greetingFade }]}>
-                    <Text style={styles.greeting}>Elevating Your Style</Text>
-                    <Text style={styles.subGreeting}>A global marketplace at your fingertips</Text>
-                </Animated.View>
+                <Image
+                    source={require('../assets/icons/World-Cart.png')}
+                    style={styles.logo}
+                    resizeMode="contain"
+                />
             </Animated.View>
 
-            <View style={styles.footer}>
-                <View style={styles.loaderTrack}>
-                    <Animated.View style={[styles.loaderFill, { width: progressBar }]} />
+            {/* BRAND TEXT */}
+            <Animated.View style={{ opacity: fadeAnim }}>
+                <Text style={styles.brand}>WORLD-CART</Text>
+                <Text style={styles.tagline}>Your Global Marketplace</Text>
+            </Animated.View>
+
+            {/* CART ICON */}
+            <Animated.Text
+                style={[
+                    styles.cart,
+                    { transform: [{ translateY: cartBounce }] },
+                ]}
+            >
+                🛒
+            </Animated.Text>
+
+            {/* PROGRESS BAR */}
+            <View style={styles.progressContainer}>
+                <View style={styles.progressTrack}>
+                    <Animated.View
+                        style={[styles.progressFill, { width: progressWidth }]}
+                    />
                 </View>
-                <Text style={styles.loadingText}>Initializing Experience...</Text>
+
+                <Text style={styles.percent}>{percentage}%</Text>
+                <Text style={styles.loadingText}>
+                    PREPARING YOUR EXPERIENCE
+                </Text>
             </View>
+
+            <Text style={styles.copyright}>
+                © 2026 WORLD-CART
+            </Text>
         </View>
     );
 };
@@ -184,107 +183,104 @@ const SplashScreen = ({ onFinish }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    logoContainer: {
+        width: width * 0.6,
+        height: width * 0.6,
         backgroundColor: '#FFFFFF',
+        borderRadius: (width * 0.6) / 2,
         justifyContent: 'center',
         alignItems: 'center',
+        marginBottom: 35,
+        // Premium Shadow
+        elevation: 25,
+        shadowColor: '#6C5CE7',
+        shadowOffset: { width: 0, height: 15 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.2)',
     },
-    pulseContainer: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    pulse: {
-        width: 180,
-        height: 180,
-        borderRadius: 90,
-        backgroundColor: '#000000',
+
+    logoGlow: {
         position: 'absolute',
+        width: '120%',
+        height: '120%',
+        borderRadius: width,
+        backgroundColor: '#6C5CE7',
+        opacity: 0.2,
+        zIndex: -1,
     },
-    content: {
-        alignItems: 'center',
-        zIndex: 10,
-    },
-    logoWrapper: {
-        marginBottom: 30,
-    },
-    logoCard: {
-        width: 160,
-        height: 160,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 45,
-        padding: 5,
-        elevation: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.2,
-        shadowRadius: 15,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.03)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
-    },
+
     logo: {
-        width: '90%',
-        height: '90%',
+        width: '100%',
+        height: '100%',
     },
-    appName: {
-        fontSize: width * 0.1, // Responsive font size
+
+    brand: {
+        fontSize: width * 0.09,
         fontWeight: '900',
-        color: '#000000',
+        color: '#FFFFFF',
         letterSpacing: 4,
         textAlign: 'center',
     },
-    accentLine: {
-        width: 60,
-        height: 4,
-        backgroundColor: '#000000',
-        alignSelf: 'center',
+
+    tagline: {
+        fontSize: width * 0.04,
+        color: 'rgba(255,255,255,0.7)',
+        textAlign: 'center',
         marginTop: 5,
-        borderRadius: 2,
+        letterSpacing: 1,
     },
-    greetingWrapper: {
-        marginTop: 25,
-        alignItems: 'center',
+
+    cart: {
+        position: 'absolute',
+        bottom: height * 0.25,
+        fontSize: 28,
     },
-    greeting: {
-        fontSize: Math.min(width * 0.05, 20),
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 5,
-    },
-    subGreeting: {
-        fontSize: Math.min(width * 0.035, 15),
-        color: '#888',
-        fontWeight: '400',
-        letterSpacing: 0.5,
-    },
-    footer: {
+
+    progressContainer: {
         position: 'absolute',
         bottom: 70,
-        width: '100%',
-        paddingHorizontal: 50,
+        width: '80%',
         alignItems: 'center',
     },
-    loaderTrack: {
+
+    progressTrack: {
         width: '100%',
-        height: 2,
-        backgroundColor: 'rgba(0,0,0,0.05)',
-        borderRadius: 1,
+        height: 6,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 4,
         overflow: 'hidden',
-        marginBottom: 15,
     },
-    loaderFill: {
+
+    progressFill: {
         height: '100%',
-        backgroundColor: '#000000',
+        backgroundColor: '#6C5CE7',
     },
+
+    percent: {
+        marginTop: 8,
+        color: '#FFFFFF',
+        fontWeight: '700',
+    },
+
     loadingText: {
+        marginTop: 5,
         fontSize: 12,
-        color: '#AAA',
-        fontWeight: '600',
-        textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.6)',
         letterSpacing: 2,
-    }
+    },
+
+    copyright: {
+        position: 'absolute',
+        bottom: 20,
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.3)',
+    },
 });
 
 export default SplashScreen;

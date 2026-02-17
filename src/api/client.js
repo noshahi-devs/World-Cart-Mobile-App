@@ -2,15 +2,16 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Smart Store Backend URL
-const BASE_URL = 'https://elicom-api.noshahidev.com';
+export const BASE_URL = 'https://app-elicom-backend.azurewebsites.net';
 
 const apiClient = axios.create({
     baseURL: BASE_URL,
     headers: {
         'Content-Type': 'application/json',
-        'Abp-TenantId': '1', // Important: Identifies the Smart Store tenant
+        // 'Abp-TenantId': '1',
+        // 'X-Requested-With': 'XMLHttpRequest',
     },
-    timeout: 10000,
+    timeout: 30000,
 });
 
 // Request interceptor to add auth token

@@ -61,8 +61,10 @@ const authService = {
             console.error('Signup Error:', {
                 message: error.message,
                 code: error.code,
-                response: error.response?.data,
-                request: error.request ? 'Request sent but no response' : 'Request setup failed'
+                status: error.response?.status,
+                data: error.response?.data,
+                url: error.config?.url,
+                method: error.config?.method
             });
             if (error.message === 'Network Error') {
                 if (Platform.OS === 'web') {
@@ -71,6 +73,18 @@ const authService = {
                 throw { message: 'Unable to connect to server. Please check your internet connection.' };
             }
             throw error.response?.data?.error || { message: 'Signup failed. Please try again.' };
+        }
+    },
+
+    // Get Current Session Info
+    // Endpoint: /api/services/app/Session/GetCurrentLoginInformations
+    getUserProfile: async () => {
+        try {
+            const response = await apiClient.get('/api/services/app/Session/GetCurrentLoginInformations');
+            return response.data.result;
+        } catch (error) {
+            console.error('Fetch Profile Error:', error);
+            throw error;
         }
     },
 

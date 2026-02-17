@@ -6,8 +6,10 @@ export const catalogService = {
             const response = await apiClient.get('/api/services/app/Category/GetAll', {
                 params: { maxResultCount }
             });
-            // ABP response wrapper: { result: { ... }, success: true, ... }
-            return response.data.result;
+            // Flexible extraction: Azure backend might send direct data or wrapped in 'result'
+            const data = response.data;
+            if (data.result) return data.result.items || data.result;
+            return data.items || data;
         } catch (error) {
             console.error('Error fetching categories:', error);
             throw error;
@@ -19,22 +21,63 @@ export const catalogService = {
             const response = await apiClient.get('/api/services/app/Homepage/GetAllProductsForCards', {
                 params: { skipCount, maxResultCount }
             });
-            return response.data.result;
+            const data = response.data;
+            if (data.result) return data.result.items || data.result;
+            return data.items || data;
         } catch (error) {
             console.error('Error fetching home products:', error);
             throw error;
         }
     },
 
-    getProductDetail: async (productId, storeProductId) => {
+    getProductDetail: async (productId) => {
+        // FIXED: More flexible validation - only check if productId exists
+        // Allow empty GUID to reach API since backend might handle it
+        if (!productId) {
+            throw new Error('Product ID is required');
+        }
+
+        // Just log warning for empty GUID, don't block the API call
+        if (productId === '00000000-0000-0000-0000-000000000000') {
+            console.warn('Warning: Empty GUID being sent to API - backend may return 500');
+            // Continue with API call instead of throwing error
+        }
+
         try {
-            // Assumed endpoint based on convention and user prompt hint
-            const response = await apiClient.get('/api/services/app/Product/GetProductDetail', {
-                params: { productId, storeProductId }
+            console.log('Calling API with productId:', productId); // Debug log
+
+            const response = await apiClient.get('/api/services/app/Homepage/GetProductDetail', {
+                params: { productId }
             });
-            return response.data.result;
+
+            const data = response.data;
+            console.log('API Response:', data); // Debug log
+
+            // Handle different response formats
+            if (data.result) {
+                return data.result;
+            }
+
+            return data;
+
         } catch (error) {
-            // console.error('Error fetching product detail:', error);
+            console.error('Error fetching product detail:', error);
+
+            // Better error messages
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.error('Response data:', error.response.data);
+                console.error('Response status:', error.response.status);
+
+                if (error.response.status === 500) {
+                    throw new Error('Server error. Please try again later.');
+                }
+            } else if (error.request) {
+                // The request was made but no response was received
+                throw new Error('Network error. Please check your connection.');
+            }
+
             throw error;
         }
     }

@@ -36,7 +36,7 @@ const FloatingLabelInput = ({
         left: 16,
         top: animatedValue.interpolate({
             inputRange: [0, 1],
-            outputRange: [18, -10],
+            outputRange: [18, -12], // Moved higher up
         }),
         fontSize: animatedValue.interpolate({
             inputRange: [0, 1],
@@ -44,10 +44,9 @@ const FloatingLabelInput = ({
         }),
         color: animatedValue.interpolate({
             inputRange: [0, 1],
-            // Use gray[600] instead of gray[400] for better visibility; error logic added
-            outputRange: [error ? COLORS.danger : COLORS.gray[600], error ? COLORS.danger : COLORS.primary],
+            outputRange: [error ? COLORS.danger : COLORS.gray[500], error ? COLORS.danger : COLORS.primary],
         }),
-        backgroundColor: COLORS.white, // Match background
+        backgroundColor: COLORS.white,
         paddingHorizontal: 4,
         zIndex: 1,
     };
@@ -59,7 +58,12 @@ const FloatingLabelInput = ({
             </Animated.Text>
             <View style={[
                 styles.inputContainer,
-                { borderColor: error ? COLORS.danger : (isFocused ? COLORS.primary : COLORS.gray[200]) }
+                {
+                    borderColor: error ? COLORS.danger : (isFocused ? COLORS.primary : COLORS.gray[200]),
+                    borderWidth: isFocused ? 2 : 1, // Thicker border on focus
+                    shadowOpacity: isFocused ? 0.1 : 0.05, // Dynamic shadow
+                    elevation: isFocused ? 4 : 1,
+                }
             ]}>
                 <TextInput
                     ref={innerRef}
@@ -98,7 +102,7 @@ const FloatingLabelInput = ({
 
 const styles = StyleSheet.create({
     inputGroup: {
-        marginBottom: 20,
+        marginBottom: 22, // Increased spacing
         position: 'relative',
     },
     inputContainer: {
@@ -106,16 +110,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: COLORS.white,
         borderRadius: 16,
-        borderWidth: 1.5,
         borderColor: COLORS.gray[200],
         paddingRight: 12,
+        // Default Shadow
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowRadius: 6,
     },
     input: {
         flex: 1,
         paddingHorizontal: 16,
-        paddingVertical: 14,
+        paddingVertical: 16, // Increased padding
         fontSize: 16,
-        color: '#333',
+        color: COLORS.black,
+        fontWeight: '500',
     },
     iconButton: {
         padding: 5,

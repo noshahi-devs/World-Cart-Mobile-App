@@ -9,6 +9,7 @@ import {
     Platform,
     ScrollView,
     Switch,
+    ActivityIndicator,
 } from 'react-native';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -17,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import FloatingLabelInput from '../components/FloatingLabelInput';
+import CustomModal from '../components/CustomModal';
 import { Ionicons } from '@expo/vector-icons';
 
 const LoginScreen = () => {
@@ -35,6 +37,8 @@ const LoginScreen = () => {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const passwordRef = useRef(null);
+
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleLogin = async () => {
         // Reset errors
@@ -57,29 +61,47 @@ const LoginScreen = () => {
             return;
         }
 
-        const result = await login(email, password, rememberMe);
+        setIsLoading(true);
 
-        if (result.success) {
-            setShowSuccessModal(true);
+        try {
+            const result = await login(email, password, rememberMe);
 
-            // Wait for 1.5 seconds to show success message, then navigate
-            setTimeout(() => {
-                setShowSuccessModal(false);
-                const { returnTo, ...otherParams } = route.params || {};
-
-                if (returnTo) {
-                    navigation.replace(returnTo, otherParams);
-                } else if (navigation.canGoBack()) {
-                    navigation.goBack();
-                } else {
-                    navigation.replace('Main');
-                }
-            }, 1500);
-        } else {
-            setError(result.message);
-            // Highlight inputs on generic failure too
+            if (result.success) {
+                setShowSuccessModal(true);
+            } else {
+                setError(result.message);
+                setEmailError(true);
+                setPasswordError(true);
+            }
+        } catch (err) {
+            setError(err.message || 'An unexpected error occurred');
             setEmailError(true);
             setPasswordError(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const navigateAfterLogin = () => {
+        setShowSuccessModal(false);
+        const params = route.params || {};
+        const { returnTo } = params;
+
+        // Remove returnTo from params to avoid passing it back
+        const targetParams = { ...params };
+        delete targetParams.returnTo;
+
+        if (returnTo) {
+            // Simplified navigation - React Navigation will find the screen
+            navigation.navigate(returnTo, targetParams);
+        } else if (navigation.canGoBack()) {
+            navigation.goBack();
+        } else {
+            // Default fallback
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Main', params: { screen: 'Profile' } }],
+            });
         }
     };
 
@@ -91,18 +113,17 @@ const LoginScreen = () => {
                 onLeftPress={() => navigation.goBack()}
             />
 
-            {/* Success Modal Overlay */}
-            {showSuccessModal && (
-                <View style={styles.successOverlay}>
-                    <View style={styles.successModal}>
-                        <View style={styles.successIconContainer}>
-                            <Ionicons name="checkmark-circle" size={60} color={COLORS.primary} />
-                        </View>
-                        <Text style={styles.successText}>Login Successful!</Text>
-                        <Text style={styles.successSubText}>Welcome back.</Text>
-                    </View>
-                </View>
-            )}
+            <CustomModal
+                visible={showSuccessModal}
+                onClose={navigateAfterLogin}
+                type="success"
+                title="Login Successful!"
+                message="Welcome back! Your secure session has been restored. Ready to explore World-Cart?"
+                primaryButton={{
+                    text: "Let's Go",
+                    onPress: navigateAfterLogin
+                }}
+            />
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -172,11 +193,16 @@ const LoginScreen = () => {
                                 </View>
 
                                 <TouchableOpacity
-                                    style={styles.button3D}
+                                    style={[styles.button3D, isLoading && styles.buttonDisabled]}
                                     onPress={handleLogin}
                                     activeOpacity={0.8}
+                                    disabled={isLoading}
                                 >
-                                    <Text style={styles.buttonText}>Login</Text>
+                                    {isLoading ? (
+                                        <ActivityIndicator size="small" color={COLORS.white} />
+                                    ) : (
+                                        <Text style={styles.buttonText}>Login</Text>
+                                    )}
                                 </TouchableOpacity>
 
                                 <View style={styles.footer}>
@@ -267,7 +293,7 @@ const styles = StyleSheet.create({
         lineHeight: rf(20),
     },
     inputsSection: {
-        gap: moderateScale(15),
+        // Gap is handled by component marginBottom
     },
     optionsRow: {
         flexDirection: 'row',
@@ -332,46 +358,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: '600',
     },
-    successOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 999,
-    },
-    successModal: {
-        backgroundColor: COLORS.white,
-        width: '80%',
-        maxWidth: 340,
-        borderRadius: 24,
-        padding: 30,
-        alignItems: 'center',
-        shadowColor: COLORS.black,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 20,
-        transform: [{ scale: 1.1 }],
-    },
-    successIconContainer: {
-        marginBottom: 20,
-        transform: [{ scale: 1.2 }],
-    },
-    successText: {
-        fontSize: rf(22),
-        fontWeight: '900',
-        color: COLORS.black,
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    successSubText: {
-        fontSize: rf(15),
-        color: COLORS.gray[500],
-        textAlign: 'center',
+    buttonDisabled: {
+        opacity: 0.7,
     }
 });
 

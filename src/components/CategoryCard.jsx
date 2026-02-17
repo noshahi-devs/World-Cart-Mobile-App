@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, useWindowDimensions } from 'react-native';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { moderateScale, rf } from '../utils/responsive';
+import { resolveImagePath } from '../utils/imagePathHelper';
 
 const CategoryCard = ({ category, onPress }) => {
     const { width } = useWindowDimensions();
@@ -29,6 +30,11 @@ const CategoryCard = ({ category, onPress }) => {
         }).start();
     };
 
+    // Handle both API format (imageUrl) and legacy format (image)
+    const imageSource = typeof category.image === 'number'
+        ? category.image
+        : { uri: resolveImagePath(category.imageUrl || category.image) };
+
     return (
         <Animated.View style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }]}>
             <TouchableOpacity
@@ -40,7 +46,7 @@ const CategoryCard = ({ category, onPress }) => {
             >
                 <View style={[styles.iconContainer, { width: iconSize, height: iconSize, borderRadius: iconSize / 2 }]}>
                     <Image
-                        source={category.image}
+                        source={imageSource}
                         style={styles.image}
                         resizeMode="cover"
                     />

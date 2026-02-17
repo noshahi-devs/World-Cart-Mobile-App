@@ -148,27 +148,19 @@ const EditProfileScreen = ({ navigation }) => {
                     contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
                 >
                     {/* Profile Picture Section - Top Prominent */}
-                    {/* Profile Picture Section - Top Prominent */}
                     <View style={styles.profileHeaderCard}>
                         {/* Decorative Premium Background Elements */}
                         <View style={styles.decorCircle1} />
                         <View style={styles.decorCircle2} />
 
                         <View style={styles.profileImageContainer}>
-                            <TouchableOpacity style={styles.imageWrapper} onPress={pickImage} activeOpacity={0.8}>
-                                {profileImage ? (
-                                    <Image source={{ uri: profileImage }} style={styles.image} />
-                                ) : (
-                                    <View style={styles.placeholderImage}>
-                                        <Camera size={40} color={COLORS.gray[400]} />
-                                    </View>
-                                )}
-                                <View style={styles.editIconWrapper}>
-                                    <Camera size={18} color={COLORS.white} />
-                                </View>
-                            </TouchableOpacity>
+                            <View style={styles.imageWrapper}>
+                                <Image
+                                    source={require('../assets/icons/World-Cart.png')}
+                                    style={styles.image}
+                                />
+                            </View>
                         </View>
-                        <Text style={styles.changePhotoText}>{!profileImage ? 'Add Profile Photo' : 'Change Photo'}</Text>
                     </View>
 
                     {/* Form Section */}

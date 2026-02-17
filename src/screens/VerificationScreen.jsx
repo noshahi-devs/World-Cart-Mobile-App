@@ -7,14 +7,15 @@ import {
     Animated,
     Image,
     SafeAreaView,
-    Platform,
     Linking,
     ScrollView,
+    Platform,
 } from 'react-native';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { rf, moderateScale } from '../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import CustomModal from '../components/CustomModal';
 
 const GoogleColors = {
     red: '#EA4335',
@@ -30,6 +31,8 @@ const VerificationScreen = () => {
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const floatAnim = useRef(new Animated.Value(0)).current;
+    const [showResendModal, setShowResendModal] = React.useState(false);
+    const [showGmailErrorModal, setShowGmailErrorModal] = React.useState(false);
 
     useEffect(() => {
         Animated.parallel([
@@ -51,7 +54,7 @@ const VerificationScreen = () => {
                         useNativeDriver: true,
                     }),
                 ])
-            ).start(),
+            )
         ]).start();
     }, []);
 
@@ -75,19 +78,33 @@ const VerificationScreen = () => {
 
         const tryOpening = async (url) => {
             try {
-                const canOpen = await Linking.canOpenURL(url);
-                if (canOpen) {
+                const supported = await Linking.canOpenURL(url);
+                if (supported) {
                     await Linking.openURL(url);
                     return true;
                 }
-            } catch (e) { return false; }
+            } catch (e) {
+                return false;
+            }
             return false;
         };
 
+        let opened = false;
         for (const url of schemes) {
-            if (await tryOpening(url)) return;
+            if (await tryOpening(url)) {
+                opened = true;
+                break;
+            }
         }
-        Linking.openURL('mailto:');
+
+        if (!opened) {
+            // Fallback to web if app fails
+            try {
+                await Linking.openURL('https://mail.google.com/mail/u/0/#inbox');
+            } catch (e) {
+                setShowGmailErrorModal(true);
+            }
+        }
     };
 
     return (
@@ -97,32 +114,27 @@ const VerificationScreen = () => {
                 contentContainerStyle={styles.scrollContent}
             >
                 <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-                    {/* Brand Accent Bar at the top */}
                     <View style={styles.brandBar}>
                         <View style={[styles.bar, { backgroundColor: GoogleColors.blue }]} />
                         <View style={[styles.bar, { backgroundColor: GoogleColors.red }]} />
                         <View style={[styles.bar, { backgroundColor: GoogleColors.yellow }]} />
                         <View style={[styles.bar, { backgroundColor: GoogleColors.green }]} />
                     </View>
-
-                    {/* 3D-like Floating Icon Container */}
                     <Animated.View style={[styles.iconContainer, { transform: [{ translateY }] }]}>
                         <View style={styles.iconCircle}>
                             <Image
-                                source={{ uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Gmail_icon_%282020%29.svg/512px-Gmail_icon_%282020%29.svg.png" }}
-                                style={{ width: '60%', height: '60%' }}
+                                source={require('../assets/icons/gmail-logo.png')}
+                                style={{ width: 80, height: 80 }}
                                 resizeMode="contain"
                             />
                         </View>
                         <View style={styles.iconShadow} />
                     </Animated.View>
-
                     <Text style={styles.title}>Check Your Email</Text>
                     <Text style={styles.description}>
                         We've sent a verification link to{"\n"}
                         <Text style={styles.emailText}>{email || "your email address"}</Text>
                     </Text>
-
                     <View style={styles.card3D}>
                         <View style={styles.cardHeaderStrip}>
                             <View style={[styles.strip, { backgroundColor: GoogleColors.blue }]} />
@@ -130,36 +142,53 @@ const VerificationScreen = () => {
                             <View style={[styles.strip, { backgroundColor: GoogleColors.yellow }]} />
                             <View style={[styles.strip, { backgroundColor: GoogleColors.green }]} />
                         </View>
-                        <Text style={styles.infoText}>
-                            Please check your inbox (and spam folder) to verify your account. Once verified, you can log in to explore World-Cart.
-                        </Text>
+                        <Text style={styles.infoText}>Please check your inbox (and spam folder) to verify your account. Once verified, you can log in to explore World-Cart.</Text>
                     </View>
 
                     <TouchableOpacity
                         style={styles.openGmailButton}
                         onPress={handleOpenGmail}
                         activeOpacity={0.8}
-                    >
-                        <Ionicons name="mail" size={24} color={COLORS.white} style={{ marginRight: 12 }} />
-                        <Text style={styles.openGmailButtonText}>Open Gmail App</Text>
-                    </TouchableOpacity>
-
+                    ><Ionicons name="mail" size={24} color={COLORS.white} style={{ marginRight: 12 }} /><Text style={styles.openGmailButtonText}>Open Gmail App</Text></TouchableOpacity>
                     <TouchableOpacity
                         style={styles.loginButton}
                         onPress={() => navigation.replace('Login')}
                         activeOpacity={0.8}
-                    >
-                        <Text style={styles.loginButtonText}>Go to Login</Text>
-                    </TouchableOpacity>
-
+                    ><Text style={styles.loginButtonText}>Go to Login</Text></TouchableOpacity>
                     <TouchableOpacity
                         style={styles.resendButton}
-                        onPress={() => alert("Verification email resent!")}
-                    >
-                        <Text style={styles.resendText}>Didn't receive code? <Text style={styles.resendLink}>Resend</Text></Text>
-                    </TouchableOpacity>
+                        onPress={() => setShowResendModal(true)}
+                    ><Text style={styles.resendText}>Didn't receive code? <Text style={styles.resendLink}>Resend</Text></Text></TouchableOpacity>
                 </Animated.View>
             </ScrollView>
+
+            <CustomModal
+                visible={showResendModal}
+                onClose={() => setShowResendModal(false)}
+                type="success"
+                title="Email Resent!"
+                message={`We've sent a new verification link to:\n${email || "your email address"}\n\nPlease check your inbox and spam folder.`}
+                primaryButton={{
+                    text: "Got it",
+                    onPress: () => setShowResendModal(false)
+                }}
+            />
+
+            <CustomModal
+                visible={showGmailErrorModal}
+                onClose={() => setShowGmailErrorModal(false)}
+                type="error"
+                title="Gmail Not Found"
+                message="We couldn't detect the Gmail app on your device. Would you like to open it in your web browser instead?"
+                primaryButton={{
+                    text: "Open Browser",
+                    onPress: () => Linking.openURL('https://mail.google.com')
+                }}
+                secondaryButton={{
+                    text: "Cancel",
+                    onPress: () => setShowGmailErrorModal(false)
+                }}
+            />
         </SafeAreaView>
     );
 };
@@ -231,7 +260,7 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     emailText: {
-        color: GoogleColors.blue, // Using Google Blue for email highlight
+        color: GoogleColors.blue,
         fontWeight: '700',
     },
     card3D: {
@@ -266,7 +295,7 @@ const styles = StyleSheet.create({
     },
     openGmailButton: {
         flexDirection: 'row',
-        backgroundColor: GoogleColors.red, // Official Gmail Red #EA4335
+        backgroundColor: GoogleColors.red,
         width: '100%',
         paddingVertical: 18,
         borderRadius: 16,
@@ -284,7 +313,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     loginButton: {
-        backgroundColor: COLORS.black, // Dark contrast for secondary action
+        backgroundColor: COLORS.black,
         width: '100%',
         paddingVertical: 18,
         borderRadius: 16,
@@ -295,7 +324,6 @@ const styles = StyleSheet.create({
         color: COLORS.white,
         fontSize: rf(16),
         fontWeight: '900',
-        textTransform: 'uppercase',
         letterSpacing: 1,
     },
     resendButton: {

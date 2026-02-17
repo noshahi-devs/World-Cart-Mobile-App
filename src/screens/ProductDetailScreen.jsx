@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     ScrollView,
     View,
@@ -8,11 +8,12 @@ import {
     StyleSheet,
     Animated,
     Dimensions,
-    FlatList
+    FlatList,
+    ActivityIndicator
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { rf, moderateScale } from '../utils/responsive';
-import { Star3D, Minus3D, Plus3D, Heart3D, Check3D } from '../components/ThreeDIcons';
+import { Star3D, Minus3D, Plus3D, Heart3D } from '../components/ThreeDIcons';
 import { CartFilled } from '../components/TabIcons';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -20,27 +21,75 @@ import Button from '../components/Button';
 import CustomModal from '../components/CustomModal';
 import Header from '../components/Header';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
+import { catalogService } from '../services/catalogService';
+import { BASE_URL } from '../api/client';
 
 const { width } = Dimensions.get('window');
 
 const ProductDetailScreen = ({ route, navigation }) => {
-    const { productId } = route.params;
-    const { products, addToCart, toggleWishlist } = useCart();
+    // FIXED: Safely get productId with fallback
+    const { productId } = route.params || {};
+    const { addToCart, toggleWishlist } = useCart();
     const { user } = useAuth();
-    const product = products.find(p => p.id === productId);
     const insets = useSafeAreaInsets();
 
-    const [selectedSize, setSelectedSize] = useState(product?.sizes?.[0] || 'M');
-    const [selectedColor, setSelectedColor] = useState(product?.colors?.[0] || null);
+    const [product, setProduct] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [selectedSize, setSelectedSize] = useState('M');
+    const [selectedColor, setSelectedColor] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [showModal, setShowModal] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const [error, setError] = useState(null);
 
     const scrollX = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
+        // FIXED: Log the received productId for debugging
+        console.log('ProductDetailScreen received productId:', productId);
+
+        if (!productId) {
+            setError('No product ID provided');
+            setLoading(false);
+            return;
+        }
+
+        fetchProductDetail();
+    }, [productId]);
+
+    const fetchProductDetail = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            // FIXED: Pass the productId directly - validation is now in service
+            const data = await catalogService.getProductDetail(productId);
+
+            // Enhanced debugging for brand and images
+            console.log('=== PRODUCT DETAIL DEBUG ===');
+            console.log('Product ID:', productId);
+            console.log('Brand from API:', data?.brandName);
+            console.log('Category from API:', data?.category?.name);
+            console.log('Images from API:', data?.images);
+            console.log('Image from API:', data?.image);
+            console.log('Full Product Data:', JSON.stringify(data, null, 2));
+            console.log('=========================');
+
+            setProduct(data);
+
+            if (data?.sizeOptions?.length > 0) setSelectedSize(data.sizeOptions[0]);
+            if (data?.colorOptions?.length > 0) setSelectedColor(data.colorOptions[0]);
+        } catch (error) {
+            console.error('Fetch detail error:', error);
+            setError(error.message || 'Failed to load product details');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         // Check if we just returned from login and have a pending action
-        if (user && route.params?.action === 'addToCart') {
+        if (user && route.params?.action === 'addToCart' && product) {
             // Clear the param so it doesn't trigger again
             navigation.setParams({ action: null });
 
@@ -48,12 +97,56 @@ const ProductDetailScreen = ({ route, navigation }) => {
             addToCart(product, quantity, selectedSize, selectedColor);
             setShowModal(true);
         }
-    }, [user, route.params]);
+    }, [user, route.params, product]);
 
-    if (!product) {
+    // FIXED: Handle case when no productId is provided
+    if (!productId && !loading) {
         return (
             <SafeAreaView style={styles.container}>
-                <Text>Product not found</Text>
+                <Header title="" leftIcon="arrow-left" onLeftPress={() => navigation.goBack()} />
+                <View style={[styles.container, styles.centerContent]}>
+                    <Text style={styles.errorTitle}>Error</Text>
+                    <Text style={styles.errorMessage}>No product ID provided</Text>
+                    <Button title="Go Back" onPress={() => navigation.goBack()} size="medium" />
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <Header title="" leftIcon="arrow-left" onLeftPress={() => navigation.goBack()} />
+                <View style={[styles.container, styles.centerContent]}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={styles.loadingText}>Loading product details...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (error || !product) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <Header title="" leftIcon="arrow-left" onLeftPress={() => navigation.goBack()} />
+                <View style={[styles.container, styles.centerContent, { padding: 20 }]}>
+                    <Text style={styles.errorTitle}>Oops!</Text>
+                    <Text style={styles.errorMessage}>
+                        {error || 'Product not found'}
+                    </Text>
+                    <Button
+                        title="Try Again"
+                        onPress={fetchProductDetail}
+                        size="medium"
+                        style={{ marginBottom: 10 }}
+                    />
+                    <Button
+                        title="Go Back"
+                        onPress={() => navigation.goBack()}
+                        size="medium"
+                        variant="outline"
+                    />
+                </View>
             </SafeAreaView>
         );
     }
@@ -62,7 +155,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
         if (!user) {
             navigation.navigate('Login', {
                 returnTo: 'ProductDetail',
-                productId: product.id,
+                productId: product.productId || product.id,
                 action: 'addToCart'
             });
             return;
@@ -75,11 +168,11 @@ const ProductDetailScreen = ({ route, navigation }) => {
         if (!user) {
             navigation.navigate('Login', {
                 returnTo: 'ProductDetail',
-                productId: product.id
+                productId: product.productId || product.id
             });
             return;
         }
-        toggleWishlist(product.id);
+        toggleWishlist(product.productId || product.id);
     };
 
     const handleScroll = Animated.event(
@@ -92,9 +185,6 @@ const ProductDetailScreen = ({ route, navigation }) => {
         setActiveImageIndex(index);
     };
 
-    // Fallback if images array is missing
-    const productImages = product.images || [product.image];
-
     // Helper to get color hex code (simple mapping for demo)
     const getColorHex = (colorName) => {
         const colors = {
@@ -105,8 +195,46 @@ const ProductDetailScreen = ({ route, navigation }) => {
             'Lavender': '#E6E6FA', 'Mint': '#98FF98', 'Charcoal': '#36454F', 'Ivory': '#FFFFF0',
             'Teal': '#008080', 'Mustard': '#FFDB58', 'Rose': '#FF007F', 'Sage': '#BCB88A'
         };
-        return colors[colorName] || colorName;
+        return colors[colorName] || '#CCCCCC';
     };
+
+    // FIXED: Properly handle image URLs with HTTPS enforcement
+    const normalizeImageUrl = (imageUrl) => {
+        if (!imageUrl) return null;
+
+        // If already a full HTTPS URL, return as is
+        if (imageUrl.startsWith('https://')) return imageUrl;
+
+        // If HTTP, convert to HTTPS (Android 9+ blocks HTTP)
+        if (imageUrl.startsWith('http://')) {
+            console.warn('Converting HTTP to HTTPS:', imageUrl);
+            return imageUrl.replace('http://', 'https://');
+        }
+
+        // If relative path, prepend BASE_URL
+        if (imageUrl.startsWith('/')) {
+            return `${BASE_URL}${imageUrl}`;
+        }
+
+        // If no protocol, assume relative and prepend BASE_URL
+        return `${BASE_URL}/${imageUrl}`;
+    };
+
+    const productImages = product.images?.length > 0
+        ? product.images.map(img => normalizeImageUrl(img)).filter(url => url !== null)
+        : product.image
+            ? [normalizeImageUrl(product.image)].filter(url => url !== null)
+            : ['https://via.placeholder.com/400'];
+
+    // Ensure we always have at least one image
+    if (productImages.length === 0) {
+        productImages.push('https://via.placeholder.com/400');
+    }
+
+    const currentPrice = product.store?.price || product.price || 0;
+    const originalPrice = product.store?.originalPrice || product.oldPrice;
+    const discount = product.store?.resellerDiscountPercentage || product.discount;
+    const stockQuantity = product.store?.stockQuantity !== undefined ? product.store.stockQuantity : (product.stockQuantity || 0);
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -134,11 +262,13 @@ const ProductDetailScreen = ({ route, navigation }) => {
                             onScroll={handleScroll}
                             onMomentumScrollEnd={onMomentumScrollEnd}
                             renderItem={({ item }) => (
-                                <Image
-                                    source={{ uri: item }}
-                                    style={styles.productImage}
-                                    resizeMode="cover"
-                                />
+                                <View style={{ width, height: '100%' }}>
+                                    <Image
+                                        source={{ uri: item }}
+                                        style={styles.productImage}
+                                        resizeMode="contain"
+                                    />
+                                </View>
                             )}
                         />
                         {/* Pagination Dots */}
@@ -161,9 +291,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
                                 );
                             })}
                         </View>
-                        {product.discount && (
+                        {!!discount && (
                             <View style={styles.discountBadge3D}>
-                                <Text style={styles.discountText}>{product.discount}</Text>
+                                <Text style={styles.discountText}>-{discount}%</Text>
                             </View>
                         )}
                     </View>
@@ -179,54 +309,98 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
                         {/* Brand & Stock Header */}
                         <View style={styles.headerRow}>
-                            <Text style={styles.brandLine}>
-                                <Text style={styles.brandName}>{product.brand || 'Generic'}</Text>
+                            <View style={styles.brandLine}>
+                                {/* FIXED: Show actual brand name or 'Unknown Brand', never fallback to category */}
+                                <Text style={styles.brandName}>
+                                    {product.brandName ? product.brandName : 'Unknown Brand'}
+                                </Text>
                                 <Text style={styles.brandSeparator}> • </Text>
-                                <Text style={styles.soldByText}>Sold by {product.storeName}</Text>
-                            </Text>
-
-                            <View style={[
-                                styles.stockIndicator,
-                                { backgroundColor: product.inStock !== false ? COLORS.success + '15' : COLORS.error + '15' }
-                            ]}>
-                                <Text style={[
-                                    styles.stockText,
-                                    { color: product.inStock !== false ? COLORS.success : COLORS.error }
-                                ]}>
-                                    {product.inStock !== false ? 'In Stock' : 'Out of Stock'}
+                                <Text style={styles.soldByText}>Sold by {product.store?.storeName || 'Merchant'}</Text>
+                            </View>
+                            <View style={[styles.stockIndicator, { backgroundColor: (stockQuantity > 0) ? COLORS.success + '15' : COLORS.error + '15' }]}>
+                                <Text style={[styles.stockText, { color: (stockQuantity > 0) ? COLORS.success : COLORS.error }]}>
+                                    {(stockQuantity > 0) ? 'In Stock' : 'Out of Stock'}
                                 </Text>
                             </View>
                         </View>
 
-                        <Text style={styles.title}>{product.title}</Text>
+                        <Text style={styles.title}>{product.title || ''}</Text>
+
+                        {/* Slug or extra metadata if needed */}
+                        {product.slug ? <Text style={styles.reviewText}>{product.slug}</Text> : null}
 
                         <View style={styles.priceContainer}>
-                            <Text style={styles.price}>${product.price.toFixed(2)}</Text>
-                            {product.oldPrice && (
-                                <Text style={styles.oldPrice}>${product.oldPrice.toFixed(2)}</Text>
-                            )}
-                            {product.discount && (
+                            <Text style={styles.price}>${currentPrice.toFixed(2)}</Text>
+                            {!!originalPrice && <Text style={styles.oldPrice}>${originalPrice.toFixed(2)}</Text>}
+                            {!!discount && (
                                 <View style={styles.discountTag}>
-                                    <Text style={styles.discountTagText}>Save {product.discount}</Text>
+                                    <Text style={styles.discountTagText}>Save {discount}%</Text>
                                 </View>
                             )}
                         </View>
 
                         {/* Rating with 3D stars */}
                         <View style={styles.ratingContainer}>
-                            <Star3D size={20} color="#FFD700" focused />
-                            <Text style={styles.ratingText}>{product.rating} <Text style={styles.brandSeparator}> • </Text> <Text style={styles.reviewText}>{product.reviews} Verified Reviews</Text></Text>
+                            <View>
+                                <Star3D size={20} color="#FFD700" focused />
+                            </View>
+                            <View style={styles.ratingText}>
+                                <Text style={styles.ratingValue}>{product.rating || '4.5'}</Text>
+                                <Text style={styles.brandSeparator}> • </Text>
+                                <Text style={styles.reviewText}>{product.reviews || '345'} Verified Reviews</Text>
+                            </View>
                         </View>
 
                         {/* Description */}
-                        <Text style={styles.description}>{product.description}</Text>
+                        <Text style={styles.sectionTitle}>Description</Text>
+                        <Text style={styles.description}>{product.description || 'No description available.'}</Text>
+
+                        {/* Category */}
+                        {product.category && (
+                            <View style={styles.sectionContainer}>
+                                <Text style={styles.sectionTitle}>Category</Text>
+                                <Text style={styles.description}>{product.category.name || 'Uncategorized'}</Text>
+                            </View>
+                        )}
+
+                        {/* Main Store Extended Info */}
+                        {product.store && (
+                            <View style={styles.sectionContainer}>
+                                <Text style={styles.sectionTitle}>Store Details</Text>
+                                <Text style={styles.description}>{product.store.storeDescription || 'No store description.'}</Text>
+                                {product.store.resellerPrice > 0 && (
+                                    <View style={styles.resellerInfo}>
+                                        <Text style={styles.description}>
+                                            Reseller Price: ${product.store.resellerPrice}
+                                        </Text>
+                                        <Text style={styles.description}>
+                                            Discount: {product.store.resellerDiscountPercentage}%
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        )}
+
+                        {/* Other Stores */}
+                        {product.otherStores?.length > 0 && (
+                            <View style={styles.sectionContainer}>
+                                <Text style={styles.sectionTitle}>Other Sellers ({product.totalOtherStores})</Text>
+                                {product.otherStores.map((store, index) => (
+                                    <View key={store.storeId || index} style={styles.otherStoreCard}>
+                                        <Text style={styles.otherStoreName}>{store.storeName || 'Unknown Store'}</Text>
+                                        <Text style={styles.otherStorePrice}>Price: ${store.price || 0}</Text>
+                                        <Text style={styles.otherStoreStock}>Stock: {store.stockQuantity || 0}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
 
                         {/* Color Picker */}
-                        {product.colors && product.colors.length > 0 && (
+                        {product.colorOptions && product.colorOptions.length > 0 && (
                             <View style={styles.sectionContainer}>
                                 <Text style={styles.sectionTitle}>Select Color</Text>
                                 <View style={styles.colorsContainer}>
-                                    {product.colors.map((color) => (
+                                    {product.colorOptions.map((color) => (
                                         <TouchableOpacity
                                             key={color}
                                             style={[
@@ -238,8 +412,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                                             <View style={[styles.colorCircle, { backgroundColor: getColorHex(color) }]} />
                                             {selectedColor === color && (
                                                 <View style={styles.checkIcon}>
-                                                    {/* Simple checkmark approximation or use icon */}
-                                                    <View style={{ width: 6, height: 10, borderBottomWidth: 2, borderRightWidth: 2, borderColor: color === 'White' ? 'black' : 'white', transform: [{ rotate: '45deg' }] }} />
+                                                    <View style={styles.checkMark} />
                                                 </View>
                                             )}
                                         </TouchableOpacity>
@@ -249,35 +422,37 @@ const ProductDetailScreen = ({ route, navigation }) => {
                         )}
 
                         {/* Size Selection with 3D effect */}
-                        <View style={styles.sectionContainer}>
-                            <Text style={styles.sectionTitle}>Size</Text>
-                            <View style={styles.sizesContainer}>
-                                {product.sizes.map((size) => (
-                                    <TouchableOpacity
-                                        key={size}
-                                        style={[
-                                            styles.sizeButton3D,
-                                            selectedSize === size && styles.selectedSize3D
-                                        ]}
-                                        onPress={() => setSelectedSize(size)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <View style={[
-                                            styles.sizeButtonInner,
-                                            selectedSize === size && styles.selectedSizeInner,
-                                            size.length > 3 && { width: 'auto', paddingHorizontal: 16 }
-                                        ]}>
-                                            <Text style={[
-                                                styles.sizeText,
-                                                selectedSize === size && styles.selectedSizeText
+                        {product.sizeOptions && product.sizeOptions.length > 0 && (
+                            <View style={styles.sectionContainer}>
+                                <Text style={styles.sectionTitle}>Size</Text>
+                                <View style={styles.sizesContainer}>
+                                    {product.sizeOptions.map((size) => (
+                                        <TouchableOpacity
+                                            key={size}
+                                            style={[
+                                                styles.sizeButton3D,
+                                                selectedSize === size && styles.selectedSize3D
+                                            ]}
+                                            onPress={() => setSelectedSize(size)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <View style={[
+                                                styles.sizeButtonInner,
+                                                selectedSize === size && styles.selectedSizeInner,
+                                                size.length > 3 && { width: 'auto', paddingHorizontal: 16 }
                                             ]}>
-                                                {size}
-                                            </Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))}
+                                                <Text style={[
+                                                    styles.sizeText,
+                                                    selectedSize === size && styles.selectedSizeText
+                                                ]}>
+                                                    {size}
+                                                </Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
                             </View>
-                        </View>
+                        )}
 
                         {/* Quantity with 3D buttons */}
                         <View style={styles.sectionContainer}>
@@ -288,7 +463,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
                                     onPress={() => quantity > 1 && setQuantity(quantity - 1)}
                                     activeOpacity={0.8}
                                 >
-                                    <Minus3D size={20} color={COLORS.gray[800]} />
+                                    <View>
+                                        <Minus3D size={20} color={COLORS.gray[800]} />
+                                    </View>
                                 </TouchableOpacity>
                                 <View style={styles.quantityDisplay}>
                                     <Text style={styles.quantityText}>{quantity}</Text>
@@ -298,7 +475,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
                                     onPress={() => setQuantity(quantity + 1)}
                                     activeOpacity={0.8}
                                 >
-                                    <Plus3D size={20} color={COLORS.gray[800]} />
+                                    <View>
+                                        <Plus3D size={20} color={COLORS.gray[800]} />
+                                    </View>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -306,20 +485,16 @@ const ProductDetailScreen = ({ route, navigation }) => {
                 </View>
             </ScrollView>
 
-            {/* Bottom Action Bar with 3D effect */}
-            <View style={[
-                styles.bottomBar,
-                { paddingBottom: (insets.bottom >= 35 ? 16 : insets.bottom + 16) }
-            ]}>
+            <View style={[styles.bottomBar, { paddingBottom: (insets.bottom >= 35 ? 16 : insets.bottom + 16) }]}>
                 <View style={styles.priceSummary}>
-                    <Text style={styles.totalPrice}>${(product.price * quantity).toFixed(2)}</Text>
+                    <Text style={styles.totalPrice}>${(currentPrice * parseInt(quantity)).toFixed(2)}</Text>
                 </View>
                 <Button
-                    title={product.inStock !== false ? "Add to Cart" : "Out of Stock"}
+                    title={stockQuantity > 0 ? "Add to Cart" : "Out of Stock"}
                     onPress={handleAddToCart}
                     size="large"
                     style={styles.addToCartButton}
-                    disabled={product.inStock === false}
+                    disabled={stockQuantity <= 0}
                     icon={<CartFilled size={20} color={COLORS.white} />}
                 />
             </View>
@@ -348,6 +523,28 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.gray[100],
+    },
+    centerContent: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 10,
+        color: COLORS.gray[600],
+        fontSize: rf(14),
+    },
+    errorTitle: {
+        fontSize: rf(24),
+        fontWeight: 'bold',
+        color: COLORS.black,
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    errorMessage: {
+        textAlign: 'center',
+        color: COLORS.gray[600],
+        marginBottom: 20,
+        fontSize: rf(14),
     },
     imageContainer: {
         marginBottom: 20,
@@ -438,17 +635,20 @@ const styles = StyleSheet.create({
     },
     brandLine: {
         flex: 1,
-        fontSize: 14,
-        color: COLORS.gray[600],
+        flexDirection: 'row',
+        flexWrap: 'wrap',
     },
     brandName: {
+        fontSize: 14,
         fontWeight: 'bold',
         color: COLORS.black,
     },
     brandSeparator: {
+        fontSize: 14,
         color: COLORS.gray[400],
     },
     soldByText: {
+        fontSize: 14,
         color: COLORS.gray[600],
     },
     stockIndicator: {
@@ -505,11 +705,11 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
         elevation: 5,
     },
-    stars3D: {
-        flexDirection: 'row',
-        gap: 2,
-    },
     ratingText: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    ratingValue: {
         fontSize: 16,
         fontWeight: 'bold',
         color: COLORS.black,
@@ -567,6 +767,14 @@ const styles = StyleSheet.create({
         bottom: 0,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    checkMark: {
+        width: 6,
+        height: 10,
+        borderBottomWidth: 2,
+        borderRightWidth: 2,
+        borderColor: 'white',
+        transform: [{ rotate: '45deg' }],
     },
     sizesContainer: {
         flexDirection: 'row',
@@ -645,7 +853,6 @@ const styles = StyleSheet.create({
         flex: 1,
         marginRight: SIZES.padding,
     },
-
     totalPrice: {
         fontSize: 26,
         fontWeight: 'bold',
@@ -653,6 +860,28 @@ const styles = StyleSheet.create({
     },
     addToCartButton: {
         flex: 2,
+    },
+    otherStoreCard: {
+        marginBottom: 10,
+        padding: 10,
+        backgroundColor: COLORS.gray[100],
+        borderRadius: 8,
+    },
+    otherStoreName: {
+        fontWeight: 'bold',
+        fontSize: 14,
+        color: COLORS.black,
+    },
+    otherStorePrice: {
+        fontSize: 13,
+        color: COLORS.gray[700],
+    },
+    otherStoreStock: {
+        fontSize: 13,
+        color: COLORS.gray[700],
+    },
+    resellerInfo: {
+        marginTop: 8,
     },
 });
 

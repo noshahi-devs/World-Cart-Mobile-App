@@ -10,6 +10,7 @@ import {
     Platform,
     Animated,
     Easing,
+    ActivityIndicator,
 } from 'react-native';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import Header from '../components/Header';
 import FloatingLabelInput from '../components/FloatingLabelInput';
 
 const SignupScreen = () => {
+    // Component logic
     const navigation = useNavigation();
     const { signup } = useAuth();
 
@@ -38,6 +40,7 @@ const SignupScreen = () => {
     const [selectedCountry, setSelectedCountry] = useState({ code: '+1', flag: '🇺🇸', name: 'United States' });
     const [showCountryPicker, setShowCountryPicker] = useState(false);
     const [isPhoneFocused, setIsPhoneFocused] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [errors, setErrors] = useState({});
 
@@ -93,7 +96,7 @@ const SignupScreen = () => {
         }),
         top: phoneLabelAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [15, -10],
+            outputRange: [18, -12], // Match FloatingLabelInput
         }),
         fontSize: phoneLabelAnim.interpolate({
             inputRange: [0, 1],
@@ -141,19 +144,27 @@ const SignupScreen = () => {
             return;
         }
 
-        const result = await signup({
-            firstName,
-            lastName,
-            email,
-            phone: `${selectedCountry.code}${phone}`,
-            password,
-            country: selectedCountry.name
-        });
+        setIsLoading(true);
 
-        if (result.success) {
-            navigation.replace('Verification', { email });
-        } else {
-            setError(result.message);
+        try {
+            const result = await signup({
+                firstName,
+                lastName,
+                email,
+                phone: `${selectedCountry.code}${phone}`,
+                password,
+                country: selectedCountry.name
+            });
+
+            if (result.success) {
+                navigation.replace('Verification', { email });
+            } else {
+                setError(result.message);
+            }
+        } catch (error) {
+            setError(error.message || "An unexpected error occurred");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -215,7 +226,12 @@ const SignupScreen = () => {
                                         <Animated.Text style={phoneLabelStyle}>Phone Number</Animated.Text>
                                         <View style={[
                                             styles.phoneContainer,
-                                            { borderColor: errors.phone ? COLORS.danger : (isPhoneFocused ? COLORS.primary : COLORS.gray[200]) }
+                                            {
+                                                borderColor: errors.phone ? COLORS.danger : (isPhoneFocused ? COLORS.primary : COLORS.gray[200]),
+                                                borderWidth: isPhoneFocused ? 2 : 1,
+                                                shadowOpacity: isPhoneFocused ? 0.1 : 0.05,
+                                                elevation: isPhoneFocused ? 4 : 1,
+                                            }
                                         ]}>
                                             <TouchableOpacity
                                                 style={styles.countrySelector}
@@ -311,11 +327,16 @@ const SignupScreen = () => {
                                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                                 <TouchableOpacity
-                                    style={styles.button3D}
+                                    style={[styles.button3D, isLoading && styles.buttonDisabled]}
                                     onPress={handleSignup}
                                     activeOpacity={0.8}
+                                    disabled={isLoading}
                                 >
-                                    <Text style={styles.buttonText}>Sign Up</Text>
+                                    {isLoading ? (
+                                        <ActivityIndicator size="small" color={COLORS.white} />
+                                    ) : (
+                                        <Text style={styles.buttonText}>Sign Up</Text>
+                                    )}
                                 </TouchableOpacity>
 
                                 <View style={styles.footer}>
@@ -410,7 +431,7 @@ const styles = StyleSheet.create({
     phoneSection: {
         position: 'relative',
         zIndex: 100,
-        marginBottom: 20, // Match FloatingLabelInput marginBottom
+        marginBottom: 24, // Match FloatingLabelInput
     },
 
     phoneContainer: {
@@ -418,15 +439,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: COLORS.white,
         borderRadius: 16,
-        borderWidth: 1.5,
-        borderColor: COLORS.gray[200],
+        // Default Shadow
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowRadius: 6,
         overflow: 'hidden',
     },
     countrySelector: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
-        paddingVertical: 14, // Match FloatingLabelInput
+        paddingVertical: 16, // Match FloatingLabelInput
         backgroundColor: COLORS.gray[100],
         borderRightWidth: 1,
         borderRightColor: COLORS.gray[200],
@@ -443,7 +469,7 @@ const styles = StyleSheet.create({
     },
     phoneInput: {
         flex: 1,
-        paddingVertical: 14, // Match FloatingLabelInput
+        paddingVertical: 16, // Match FloatingLabelInput
         paddingHorizontal: 16,
         fontSize: rf(16), // Match FloatingLabelInput
         color: COLORS.black,
@@ -527,6 +553,9 @@ const styles = StyleSheet.create({
         fontSize: rf(16),
         color: COLORS.black,
         fontWeight: '500',
+    },
+    buttonDisabled: {
+        opacity: 0.7,
     }
 });
 

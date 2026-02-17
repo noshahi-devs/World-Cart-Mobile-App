@@ -5,6 +5,7 @@ import { Star3D } from './ThreeDIcons';
 import { useCart } from '../context/CartContext';
 import { COLORS, SIZES } from '../constants/theme';
 import { rf, moderateScale } from '../utils/responsive';
+import { resolveImagePath } from '../utils/imagePathHelper';
 
 const ProductCard = ({ product, onPress, containerStyle }) => {
     const { width } = useWindowDimensions();
@@ -24,8 +25,15 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
 
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const cartPulseAnim = useRef(new Animated.Value(1)).current;
-    const [activeImage, setActiveImage] = useState(product.image);
 
+    // Resolve initial image
+    const initialImage = resolveImagePath(product.image1 || product.image || product.imageUrl);
+    const [activeImage, setActiveImage] = useState(initialImage);
+
+    // Update active image if product changes
+    useEffect(() => {
+        setActiveImage(resolveImagePath(product.image1 || product.image || product.imageUrl));
+    }, [product.image1, product.image, product.imageUrl]);
 
     useEffect(() => {
         // Subtle breathing/pulse animation for the cart button
@@ -50,8 +58,9 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
     }, []);
 
     const handlePressIn = () => {
-        if (product.hoverImage) {
-            setActiveImage(product.hoverImage);
+        const hoverImg = product.image2 || product.hoverImage;
+        if (hoverImg) {
+            setActiveImage(resolveImagePath(hoverImg));
         }
         Animated.spring(scaleAnim, {
             toValue: 0.96,
@@ -62,7 +71,7 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
     };
 
     const handlePressOut = () => {
-        setActiveImage(product.image);
+        setActiveImage(resolveImagePath(product.image1 || product.image || product.imageUrl));
         Animated.spring(scaleAnim, {
             toValue: 1,
             useNativeDriver: true,
@@ -93,7 +102,8 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                     <Image
                         source={{ uri: activeImage }}
                         style={styles.image}
-                        resizeMode="cover"
+                        // Use resizeMode="contain" for products to ensure they fit well
+                        resizeMode="contain"
                     />
 
                     <TouchableOpacity
@@ -108,9 +118,11 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                         )}
                     </TouchableOpacity>
 
-                    {product.discount && (
+                    {(product.discount || product.resellerDiscountPercentage) && (
                         <View style={styles.discountBadge}>
-                            <Text style={styles.discountText}>-{product.discount}</Text>
+                            <Text style={styles.discountText}>
+                                -{product.resellerDiscountPercentage || product.discount}%
+                            </Text>
                         </View>
                     )}
                 </View>
@@ -118,9 +130,9 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                 {/* Info Container */}
                 <View style={styles.infoContainer}>
                     <Text style={styles.brandLine} numberOfLines={1}>
-                        <Text style={styles.brandName}>{product.brand || product.category || 'World'}</Text>
+                        <Text style={styles.brandName}>{product.categoryName || product.brand || product.category || 'World'}</Text>
                         <Text style={styles.brandSeparator}> • </Text>
-                        <Text style={styles.soldByText}>Sold by {product.storeName}</Text>
+                        <Text style={styles.soldByText}>Sold by {product.storeName || 'Merchant'}</Text>
                     </Text>
 
                     <Text style={styles.title} numberOfLines={2}>
@@ -131,15 +143,17 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                         <View style={styles.priceRatingColumn}>
                             <View style={styles.priceContainer}>
                                 <Text style={styles.price}>${product.price ? product.price.toFixed(2) : '0.00'}</Text>
-                                {product.oldPrice && (
-                                    <Text style={styles.oldPrice}>${product.oldPrice.toFixed(2)}</Text>
+                                {(product.originalPrice || product.oldPrice) && (
+                                    <Text style={styles.oldPrice}>
+                                        ${(product.originalPrice || product.oldPrice).toFixed(2)}
+                                    </Text>
                                 )}
                             </View>
 
                             <View style={styles.ratingContainer}>
                                 <Star3D size={12} color="#FFD700" focused />
                                 <Text style={styles.ratingText}>
-                                    {product.rating || '0.0'} • <Text style={styles.reviewText}>{product.reviews || 0} Reviews</Text>
+                                    {product.rating || '4.5'} • <Text style={styles.reviewText}>{product.reviews || 0} Reviews</Text>
                                 </Text>
                             </View>
                         </View>

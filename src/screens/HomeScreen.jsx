@@ -14,7 +14,7 @@ import CustomModal from '../components/CustomModal';
 import Header from '../components/Header';
 import { Search3D, Close3D } from '../components/ThreeDIcons';
 import { useCart } from '../context/CartContext';
-import { categories, banners, promoBanner, aboutData } from '../constants/data';
+import { banners, promoBanner, aboutData } from '../constants/data';
 import { COLORS, SIZES } from '../constants/theme';
 
 // New Components
@@ -22,10 +22,19 @@ import HomeBanner from '../components/home/HomeBanner';
 import HomeCategorySection from '../components/home/HomeCategorySection';
 import HomeProductSection from '../components/home/HomeProductSection';
 import DiscoveryBanner from '../components/home/DiscoveryBanner';
+import { catalogService } from '../services/catalogService';
+import { ActivityIndicator } from 'react-native';
 
 const HomeScreen = ({ navigation }) => {
-    const { products = [], getCartItemCount } = useCart();
+    // Removed products from useCart - now using API data only
+    const { getCartItemCount } = useCart();
     const insets = useSafeAreaInsets();
+
+    // State for live data
+    const [liveCategories, setLiveCategories] = useState([]);
+    const [liveProducts, setLiveProducts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const [showSearch, setShowSearch] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +43,27 @@ const HomeScreen = ({ navigation }) => {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const scrollY = useRef(new Animated.Value(0)).current;
     const searchAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        fetchHomeData();
+    }, []);
+
+    const fetchHomeData = async () => {
+        try {
+            setIsLoading(true);
+            const [cats, prods] = await Promise.all([
+                catalogService.getAllCategories(),
+                catalogService.getProductsForHome()
+            ]);
+            setLiveCategories(cats || []);
+            setLiveProducts(prods || []);
+        } catch (error) {
+            console.error('Home Data Fetch Error:', error);
+            // No fallback - show empty state
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const toggleSearch = () => {
         if (isAnimating) return;
@@ -58,22 +88,25 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
+    // Use only API data - no fallback
+    const displayProducts = liveProducts;
+    const displayCategories = liveCategories;
+
     // Safety check for products
-    const safeProducts = Array.isArray(products) ? products : [];
+    const safeProducts = Array.isArray(displayProducts) ? displayProducts : [];
 
     const filteredProducts = searchQuery
         ? safeProducts.filter(product =>
             product?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product?.description?.toLowerCase().includes(searchQuery.toLowerCase())
         )
         : safeProducts;
 
     const handleCategoryPress = (category) => {
         setSelectedCategory(category);
-        // Implement category filtering or navigation
-        // For now navigation to ProductList with category filter
         navigation.navigate('ProductList', {
-            title: category.name,
+            title: category.name || category.title,
             filterType: 'category',
             categoryId: category.id
         });
@@ -90,9 +123,28 @@ const HomeScreen = ({ navigation }) => {
         });
     };
 
+    const handleProductPress = (product) => {
+        // Robust ID selection:
+        // 1. prefer productId if it exists and is not empty GUID
+        // 2. fallback to id if it exists and is not empty GUID
+        let targetId = null;
+        const emptyGuid = '00000000-0000-0000-0000-000000000000';
 
-    // Expand data for "more items" feel
-    const expandedCategories = [...categories, ...categories, ...categories];
+        if (product.productId && product.productId !== emptyGuid) {
+            targetId = product.productId;
+        } else if (product.id && product.id !== emptyGuid) {
+            targetId = product.id;
+        }
+
+        if (targetId) {
+            navigation.navigate('ProductDetail', { productId: targetId });
+        } else {
+            console.warn('Home: Invalid product ID pressed:', product);
+        }
+    };
+
+    // Expand data for "more items" feel if needed
+    const expandedCategories = displayCategories.length < 5 ? [...displayCategories, ...displayCategories] : displayCategories;
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -177,7 +229,12 @@ const HomeScreen = ({ navigation }) => {
                 scrollEventThrottle={16}
             >
                 <View style={styles.responsiveContainer}>
-                    {!showSearch || !searchQuery ? (
+                    {isLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color={COLORS.primary} />
+                            <Text style={styles.loadingText}>Fetching latest products...</Text>
+                        </View>
+                    ) : (!showSearch || !searchQuery ? (
                         <>
                             {/* Banners */}
                             <HomeBanner banners={banners} />
@@ -196,7 +253,7 @@ const HomeScreen = ({ navigation }) => {
                             <HomeProductSection
                                 title="Featured Products"
                                 products={safeProducts.slice(0, 12)}
-                                onPressProduct={(product) => navigation.navigate('ProductDetail', { productId: product.id })}
+                                onPressProduct={handleProductPress}
                                 onSeeAllPress={() => handleSeeAllProducts('Featured Products', 'featured')}
                             />
                         </>
@@ -205,10 +262,10 @@ const HomeScreen = ({ navigation }) => {
                             <HomeProductSection
                                 title={`Results for "${searchQuery}"`}
                                 products={filteredProducts}
-                                onPressProduct={(product) => navigation.navigate('ProductDetail', { productId: product.id })}
+                                onPressProduct={handleProductPress}
                             />
                         </View>
-                    )}
+                    ))}
                 </View>
             </Animated.ScrollView>
 
@@ -230,7 +287,7 @@ const HomeScreen = ({ navigation }) => {
                 type="info"
                 icon={
                     <Image
-                        source={require('../assets/World-Cart.png')}
+                        source={require('../assets/icons/World-Cart.png')}
                         style={{ width: 80, height: 80, borderRadius: 40 }}
                         resizeMode="cover"
                     />
@@ -298,6 +355,17 @@ const styles = StyleSheet.create({
         maxWidth: 1200, // Elite Desktop constraint
         alignSelf: 'center',
     },
+    loadingContainer: {
+        paddingVertical: 100,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    loadingText: {
+        marginTop: 10,
+        color: COLORS.gray[500],
+        fontSize: 14,
+        fontWeight: '500',
+    }
 });
 
 export default HomeScreen;

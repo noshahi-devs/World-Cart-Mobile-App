@@ -23,11 +23,30 @@ export const AuthProvider = ({ children }) => {
 
             if (userData && token) {
                 setUser(JSON.parse(userData));
+                // Optionally refresh profile in background
+                fetchFullProfile();
             }
         } catch (error) {
             console.error('Failed to restore session:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchFullProfile = async () => {
+        try {
+            const profile = await authService.getUserProfile();
+            if (profile && profile.user) {
+                const fullUserData = {
+                    ...profile.user,
+                    tenantId: profile.tenant?.id,
+                    tenancyName: profile.tenant?.tenancyName
+                };
+                setUser(fullUserData);
+                await AsyncStorage.setItem('userData', JSON.stringify(fullUserData));
+            }
+        } catch (error) {
+            console.error('Background profile fetch failed:', error);
         }
     };
 
@@ -38,9 +57,17 @@ export const AuthProvider = ({ children }) => {
             const response = await authService.login(email, password);
 
             if (response.success) {
-                // authService.login already saves 'userToken' and 'userData' to AsyncStorage
-                // We just need to update local state
-                setUser({ email });
+                // Fetch full profile info immediately after login
+                const profile = await authService.getUserProfile();
+                const fullUserData = {
+                    email,
+                    id: response.userId,
+                    ...profile?.user,
+                    tenantId: profile?.tenant?.id
+                };
+
+                setUser(fullUserData);
+                await AsyncStorage.setItem('userData', JSON.stringify(fullUserData));
                 return { success: true };
             }
             return { success: false, message: response.message || 'Invalid response' };

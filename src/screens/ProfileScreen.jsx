@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     ScrollView,
     View,
@@ -7,6 +7,7 @@ import {
     Image,
     TouchableOpacity,
     StyleSheet,
+    Animated,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PayPalIcon } from '../components/TabIcons';
@@ -33,7 +34,8 @@ import { moderateScale, rf, verticalScale } from '../utils/responsive';
 import { CreditCardIcon } from '../components/TabIcons';
 
 const ProfileScreen = ({ navigation }) => {
-    const { products } = useCart();
+    // Removed products from useCart - will use Wishlist API later
+    const { getCartItemCount } = useCart();
     const { user, logout } = useAuth();
     const insets = useSafeAreaInsets();
 
@@ -74,28 +76,85 @@ const ProfileScreen = ({ navigation }) => {
     };
 
     const [activeSection, setActiveSection] = useState('orders');
-    const wishlistItems = products.filter(product => product.wishlisted);
+
+    // TODO: Fetch wishlist from backend API
+    // For now, empty array (will implement Wishlist API later)
+    const wishlistItems = [];
+
+    // Animations for Guest View
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(30)).current;
+    const floatAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (!user) {
+            // Entry Animations
+            Animated.parallel([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(slideAnim, {
+                    toValue: 0,
+                    tension: 50,
+                    friction: 7,
+                    useNativeDriver: true,
+                })
+            ]).start();
+
+            // Continuous Floating Animation
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(floatAnim, {
+                        toValue: 1,
+                        duration: 2000,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(floatAnim, {
+                        toValue: 0,
+                        duration: 2000,
+                        useNativeDriver: true,
+                    })
+                ])
+            ).start();
+        }
+    }, [user]);
+
+    const translateY = floatAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, -15]
+    });
 
     // Guest View
     if (!user) {
         return (
             <SafeAreaView style={styles.container}>
                 <Header title="Profile" leftIcon="arrow-left" onLeftPress={() => navigation.navigate('Home')} />
-                <View style={styles.guestContainer}>
-                    <View style={styles.guestIconCircle}>
-                        <User size={60} color={COLORS.gray[400]} />
-                    </View>
-                    <Text style={styles.guestTitle}>Welcome, Guest!</Text>
-                    <Text style={styles.guestMessage}>
-                        Sign in to access your profile, orders, and wishlist.
-                    </Text>
-                    <Button
-                        title="Sign In / Sign Up"
+                <Animated.View style={[styles.guestContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                    {/* Decorative Background Circles */}
+                    <View style={styles.guestDecorCircle1} />
+                    <View style={styles.guestDecorCircle2} />
+
+                    <Animated.View style={[styles.guestIconWrapper, { transform: [{ translateY }] }]}>
+                        <View style={styles.guestIconCircle3D}>
+                            <User size={60} color={COLORS.primary} strokeWidth={1.5} />
+                        </View>
+                        <View style={styles.guestIconShadow} />
+                    </Animated.View>
+
+                    <Text style={styles.guestTitle}>Join World-Cart Elite</Text>
+                    <Text style={styles.guestMessage}>Unlock premium features, track your 3D orders, and sync your wishlist across all devices.</Text>
+                    <TouchableOpacity
+                        style={styles.guestLoginButton3D}
                         onPress={() => navigation.navigate('Login', { returnTo: 'Profile' })}
-                        size="large"
-                        style={styles.guestButton}
-                    />
-                </View>
+                        activeOpacity={0.8}
+                    ><View style={styles.guestLoginButtonInner}><Text style={styles.guestLoginButtonText}>Sign In / Create Account</Text></View></TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.guestSecondaryButton}
+                        onPress={() => navigation.navigate('Home')}
+                    ><Text style={styles.guestSecondaryButtonText}>Continue as Explorer</Text></TouchableOpacity>
+                </Animated.View>
             </SafeAreaView>
         );
     }
@@ -284,18 +343,15 @@ const ProfileScreen = ({ navigation }) => {
 
                             <View style={styles.profileMainContent}>
                                 <View style={styles.profileImageWrapper}>
-                                    {user.profileImage ? (
-                                        <Image source={{ uri: user.profileImage }} style={styles.profileImage} />
-                                    ) : (
-                                        <View style={styles.profilePlaceholder}>
-                                            <User size={40} color={COLORS.gray[400]} />
-                                        </View>
-                                    )}
+                                    <Image
+                                        source={require('../assets/icons/World-Cart.png')}
+                                        style={styles.profileImage}
+                                    />
                                 </View>
 
                                 <View style={styles.profileInfo}>
                                     <Text style={styles.profileName} numberOfLines={1} adjustsFontSizeToFit>
-                                        {user.name || `${user.firstName} ${user.lastName}` || 'User'}
+                                        Hi 👋 User
                                     </Text>
                                     <Text style={styles.profileEmail} numberOfLines={1}>{user.email}</Text>
                                     <View style={styles.membershipBadge}>
@@ -461,7 +517,7 @@ const ProfileScreen = ({ navigation }) => {
                                         type: 'info',
                                         icon: item.isLogo ? (
                                             <Image
-                                                source={require('../assets/World-Cart.png')}
+                                                source={require('../assets/icons/World-Cart.png')}
                                                 style={{ width: 80, height: 80, borderRadius: 40 }}
                                                 resizeMode="cover"
                                             />
@@ -478,7 +534,7 @@ const ProfileScreen = ({ navigation }) => {
                                     ]}>
                                         {item.isLogo ? (
                                             <Image
-                                                source={require('../assets/World-Cart.png')}
+                                                source={require('../assets/icons/World-Cart.png')}
                                                 style={{ width: 44, height: 44, borderRadius: 22 }}
                                                 resizeMode="cover"
                                             />
@@ -546,30 +602,103 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: SIZES.padding * 2,
+        backgroundColor: COLORS.white,
+        overflow: 'hidden',
     },
-    guestIconCircle: {
-        width: moderateScale(120),
-        height: moderateScale(120),
-        borderRadius: moderateScale(60),
-        backgroundColor: COLORS.gray[100],
+    guestDecorCircle1: {
+        position: 'absolute',
+        top: -50,
+        right: -50,
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        backgroundColor: COLORS.primary + '08',
+    },
+    guestDecorCircle2: {
+        position: 'absolute',
+        bottom: 100,
+        left: -30,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: COLORS.primary + '05',
+    },
+    guestIconWrapper: {
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    guestIconCircle3D: {
+        width: moderateScale(140),
+        height: moderateScale(140),
+        borderRadius: moderateScale(70),
+        backgroundColor: COLORS.white,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: moderateScale(24),
+        borderWidth: 1,
+        borderColor: COLORS.gray[100],
+        shadowColor: '#1c71d8',
+        shadowOffset: { width: 0, height: 15 },
+        shadowOpacity: 0.2,
+        shadowRadius: 20,
+        elevation: 15,
+        zIndex: 2,
+    },
+    guestIconShadow: {
+        width: 80,
+        height: 15,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        borderRadius: 40,
+        marginTop: 20,
+        transform: [{ scaleX: 1.5 }],
     },
     guestTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
+        fontSize: rf(26),
+        fontWeight: '900',
         color: COLORS.black,
         marginBottom: 12,
+        textAlign: 'center',
     },
     guestMessage: {
-        fontSize: 16,
-        color: COLORS.gray[600],
+        fontSize: rf(15),
+        color: COLORS.gray[500],
         textAlign: 'center',
-        marginBottom: 32,
+        lineHeight: 22,
+        paddingHorizontal: 20,
+        marginBottom: 40,
     },
-    guestButton: {
+    guestLoginButton3D: {
         width: '100%',
+        backgroundColor: COLORS.primary,
+        borderRadius: 18,
+        padding: 4,
+        shadowColor: '#1c71d8',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    guestLoginButtonInner: {
+        paddingVertical: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    guestLoginButtonText: {
+        color: COLORS.white,
+        fontSize: rf(16),
+        fontWeight: '900',
+        letterSpacing: 0.5,
+    },
+    guestSecondaryButton: {
+        marginTop: 20,
+        paddingVertical: 12,
+    },
+    guestSecondaryButtonText: {
+        color: COLORS.gray[500],
+        fontSize: rf(14),
+        fontWeight: '700',
     },
     profileSectionWrapper: {
         padding: SIZES.padding,

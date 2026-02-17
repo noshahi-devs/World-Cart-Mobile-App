@@ -197,7 +197,7 @@ const CartScreen = ({ navigation }) => {
             type: 'info',
             icon: (
                 <Image
-                    source={require('../assets/World-Cart.png')}
+                    source={require('../assets/icons/World-Cart.png')}
                     style={{ width: 80, height: 80, borderRadius: 40 }}
                     resizeMode="cover"
                 />
