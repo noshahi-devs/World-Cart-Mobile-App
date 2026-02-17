@@ -8,22 +8,20 @@ const authService = {
     login: async (email, password) => {
         try {
             const payload = {
-                userNameOrEmailAddress: email,
-                password: password,
+                userNameOrEmailAddress: email.trim(),
+                password: password.trim(),
                 rememberClient: false
             };
 
             const response = await apiClient.post('/api/TokenAuth/Authenticate', payload);
 
             // Smart Store likely returns { result: { accessToken: "...", ... } }
-            // We need to inspect the response structure. 
-            // Assuming standard ABP framework response based on endpoint structure.
             const { accessToken, encryptedAccessToken, userId } = response.data.result;
 
             if (accessToken) {
                 await AsyncStorage.setItem('userToken', accessToken);
                 // Store basic user info if available, or fetch profile later
-                await AsyncStorage.setItem('userData', JSON.stringify({ email, id: userId }));
+                await AsyncStorage.setItem('userData', JSON.stringify({ email: email.trim(), id: userId }));
                 return { success: true, token: accessToken, userId };
             }
             return { success: false, message: 'No access token received' };
@@ -43,16 +41,50 @@ const authService = {
         }
     },
 
+    // Forgot Password
+    // Step 1: Request reset link
+    forgotPassword: async (email) => {
+        try {
+            // Standard ABP endpoint for forget password
+            const response = await apiClient.post('/api/services/app/Account/SendPasswordResetCode', {
+                emailAddress: email.trim()
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Forgot Password Error:', error);
+            throw error.response?.data?.error || { message: 'Failed to send reset link.' };
+        }
+    },
+
+    // Reset Password
+    // Step 2: Use token from email to set new password
+    resetPassword: async ({ userId, token, newPassword }) => {
+        try {
+            const response = await apiClient.post('/api/services/app/Account/ResetPassword', {
+                userId,
+                token,
+                newPassword: newPassword.trim()
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Reset Password Error:', error);
+            throw error.response?.data?.error || { message: 'Failed to reset password.' };
+        }
+    },
+
     // Customer Signup
     // Endpoint: /api/services/app/Account/RegisterSmartStoreCustomer
-    register: async ({ email, password, country, phone, fullName }) => {
+    register: async ({ email, password, country, phone, fullName, firstName, lastName }) => {
         try {
             const payload = {
                 emailAddress: email,
                 password: password,
                 country: country,
                 phoneNumber: phone,
-                fullName: fullName // VALIDATED: Required by backend
+                fullName: fullName, // Keep for backward compatibility
+                name: firstName || fullName?.split(' ')[0], // Added based on new API snippet
+                surname: lastName || fullName?.split(' ')[1] || '', // Added based on new API snippet
+                userName: email, // Recommended in new snippet
             };
 
             const response = await apiClient.post('/api/services/app/Account/RegisterSmartStoreCustomer', payload);

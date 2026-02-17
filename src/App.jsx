@@ -18,7 +18,7 @@ export default function App() {
             if (Platform.OS === 'android') {
                 try {
                     // Fix for edge-to-edge warning
-                    await NavigationBar.setBackgroundColorAsync('transparent');
+                    // await NavigationBar.setBackgroundColorAsync('transparent');
                 } catch (e) {
                     console.log('Navigation Bar Error:', e);
                 }

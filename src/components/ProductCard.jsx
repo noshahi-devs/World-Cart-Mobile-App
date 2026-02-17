@@ -130,9 +130,7 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                 {/* Info Container */}
                 <View style={styles.infoContainer}>
                     <Text style={styles.brandLine} numberOfLines={1}>
-                        <Text style={styles.brandName}>{product.categoryName || product.brand || product.category || 'World'}</Text>
-                        <Text style={styles.brandSeparator}> • </Text>
-                        <Text style={styles.soldByText}>Sold by {product.storeName || 'Merchant'}</Text>
+                        <Text style={styles.brandName}>{product.categoryName || product.brand || product.category || 'World'}</Text><Text style={styles.brandSeparator}> • </Text><Text style={styles.soldByText}>Sold by {product.storeName || 'Merchant'}</Text>
                     </Text>
 
                     <Text style={styles.title} numberOfLines={2}>

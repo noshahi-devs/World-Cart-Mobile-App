@@ -351,9 +351,9 @@ const ProfileScreen = ({ navigation }) => {
 
                                 <View style={styles.profileInfo}>
                                     <Text style={styles.profileName} numberOfLines={1} adjustsFontSizeToFit>
-                                        Hi 👋 User
+                                        Hi 👋 {user?.fullName || user?.name || 'User'}
                                     </Text>
-                                    <Text style={styles.profileEmail} numberOfLines={1}>{user.email}</Text>
+                                    <Text style={styles.profileEmail} numberOfLines={1}>{user?.emailAddress || user?.email || 'user@example.com'}</Text>
                                     <View style={styles.membershipBadge}>
                                         <Crown3D size={20} focused={true} />
                                         <Text style={styles.membershipText}>Elite Member</Text>

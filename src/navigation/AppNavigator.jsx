@@ -18,6 +18,8 @@ import ProductListScreen from '../screens/ProductListScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import VerificationScreen from '../screens/VerificationScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import { COLORS } from '../constants/theme';
 import {
@@ -108,6 +110,8 @@ const AppNavigator = () => {
                         <Stack.Screen name="Login" component={LoginScreen} />
                         <Stack.Screen name="Signup" component={SignupScreen} />
                         <Stack.Screen name="Verification" component={VerificationScreen} />
+                        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+                        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
                     </Stack.Group>
                 </Stack.Navigator>
             </View>

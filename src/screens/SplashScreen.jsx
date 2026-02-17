@@ -144,38 +144,25 @@ const SplashScreen = ({ onFinish }) => {
             </Animated.View>
 
             {/* BRAND TEXT */}
-            <Animated.View style={{ opacity: fadeAnim }}>
-                <Text style={styles.brand}>WORLD-CART</Text>
-                <Text style={styles.tagline}>Your Global Marketplace</Text>
+            <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
+                <Text style={styles.brand}>WORLD-CART</Text><Text style={styles.tagline}>Your Global Marketplace</Text>
             </Animated.View>
 
             {/* CART ICON */}
-            <Animated.Text
-                style={[
-                    styles.cart,
-                    { transform: [{ translateY: cartBounce }] },
-                ]}
-            >
-                🛒
-            </Animated.Text>
+            <Animated.View style={[styles.cart, { transform: [{ translateY: cartBounce }] }]}>
+                <Text style={{ fontSize: 35 }}>🛒</Text>
+            </Animated.View>
 
             {/* PROGRESS BAR */}
             <View style={styles.progressContainer}>
                 <View style={styles.progressTrack}>
-                    <Animated.View
-                        style={[styles.progressFill, { width: progressWidth }]}
-                    />
+                    <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
                 </View>
-
                 <Text style={styles.percent}>{percentage}%</Text>
-                <Text style={styles.loadingText}>
-                    PREPARING YOUR EXPERIENCE
-                </Text>
+                <Text style={styles.loadingText}>PREPARING YOUR EXPERIENCE</Text>
             </View>
 
-            <Text style={styles.copyright}>
-                © 2026 WORLD-CART
-            </Text>
+            <Text style={styles.copyright}>© 2026 WORLD-CART</Text>
         </View>
     );
 };
@@ -239,7 +226,7 @@ const styles = StyleSheet.create({
     cart: {
         position: 'absolute',
         bottom: height * 0.25,
-        fontSize: 28,
+        fontSize: 35,
     },
 
     progressContainer: {

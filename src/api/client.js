@@ -8,8 +8,8 @@ const apiClient = axios.create({
     baseURL: BASE_URL,
     headers: {
         'Content-Type': 'application/json',
-        // 'Abp-TenantId': '1',
-        // 'X-Requested-With': 'XMLHttpRequest',
+        'Abp-TenantId': '1',
+        'X-Requested-With': 'XMLHttpRequest',
     },
     timeout: 30000,
 });

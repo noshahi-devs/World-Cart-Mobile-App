@@ -83,15 +83,17 @@ export const AuthProvider = ({ children }) => {
     const signup = async ({ firstName, lastName, phone, country, email, password }) => {
         try {
             // ⚠️ BACKEND REQUIREMENT: Combine names into 'fullName'
-            const fullName = `${firstName} ${lastName}`.trim();
+            const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
             // Call the real API
             await authService.register({
-                email,
-                password,
-                country,
-                phone,
-                fullName // Required field
+                email: email.trim(),
+                password: password.trim(),
+                country: country.trim(),
+                phone: phone.trim(),
+                fullName, // Required field
+                firstName: firstName.trim(),
+                lastName: lastName.trim()
             });
 
             return { success: true };
@@ -99,6 +101,26 @@ export const AuthProvider = ({ children }) => {
             // Extract error message from backend response
             const msg = error.message || 'Signup failed. Please try again.';
             return { success: false, message: msg };
+        }
+    };
+
+    // 🔑 FORGOT PASSWORD
+    const forgotPassword = async (email) => {
+        try {
+            await authService.forgotPassword(email);
+            return { success: true };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    };
+
+    // 🔒 RESET PASSWORD
+    const resetPassword = async (data) => {
+        try {
+            await authService.resetPassword(data);
+            return { success: true };
+        } catch (error) {
+            return { success: false, message: error.message };
         }
     };
 
@@ -117,6 +139,8 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         signup,
+        forgotPassword,
+        resetPassword,
         logout
     };
 

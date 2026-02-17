@@ -310,12 +310,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                         {/* Brand & Stock Header */}
                         <View style={styles.headerRow}>
                             <View style={styles.brandLine}>
-                                {/* FIXED: Show actual brand name or 'Unknown Brand', never fallback to category */}
-                                <Text style={styles.brandName}>
-                                    {product.brandName ? product.brandName : 'Unknown Brand'}
-                                </Text>
-                                <Text style={styles.brandSeparator}> • </Text>
-                                <Text style={styles.soldByText}>Sold by {product.store?.storeName || 'Merchant'}</Text>
+                                <Text style={styles.brandName}>{product.brandName ? product.brandName : 'Unknown Brand'}</Text><Text style={styles.brandSeparator}> • </Text><Text style={styles.soldByText}>Sold by {product.store?.storeName || 'Merchant'}</Text>
                             </View>
                             <View style={[styles.stockIndicator, { backgroundColor: (stockQuantity > 0) ? COLORS.success + '15' : COLORS.error + '15' }]}>
                                 <Text style={[styles.stockText, { color: (stockQuantity > 0) ? COLORS.success : COLORS.error }]}>
@@ -345,9 +340,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                                 <Star3D size={20} color="#FFD700" focused />
                             </View>
                             <View style={styles.ratingText}>
-                                <Text style={styles.ratingValue}>{product.rating || '4.5'}</Text>
-                                <Text style={styles.brandSeparator}> • </Text>
-                                <Text style={styles.reviewText}>{product.reviews || '345'} Verified Reviews</Text>
+                                <Text style={styles.ratingValue}>{product.rating || '4.5'}</Text><Text style={styles.brandSeparator}> • </Text><Text style={styles.reviewText}>{product.reviews || '345'} Verified Reviews</Text>
                             </View>
                         </View>
 
