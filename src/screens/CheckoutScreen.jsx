@@ -558,7 +558,7 @@ const CheckoutScreen = ({ navigation }) => {
                 <View
                     style={{
                         height: insets.bottom,
-                        backgroundColor: '#1A1A1A',
+                        backgroundColor: COLORS.gray[100],
                         width: '100%',
                     }}
                 />
