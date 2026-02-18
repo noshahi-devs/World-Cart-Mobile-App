@@ -21,6 +21,7 @@ import Button from '../components/Button';
 import CustomModal from '../components/CustomModal';
 import Header from '../components/Header';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
+import orderService from '../services/orderService';
 
 const CheckoutScreen = ({ navigation }) => {
     const { getCartTotal, clearCart, cartItems } = useCart();
@@ -110,7 +111,7 @@ const CheckoutScreen = ({ navigation }) => {
         return true;
     };
 
-    const handleVerifyFinora = () => {
+    const handleVerifyFinora = async () => {
         // Validate basic card info first
         if (!cardData.cardNumber.trim() || cardData.cardNumber.length < 16) {
             setFinoraBalanceError('Please enter a 16-digit card number');
@@ -129,17 +130,28 @@ const CheckoutScreen = ({ navigation }) => {
         setFinoraBalanceError(null);
         setIsFinoraVerified(false);
 
-        // Simulate API call
-        setTimeout(() => {
-            setIsVerifyingFinora(false);
-            // Simple logic for demo: card numbers starting with '4' are successful
-            if (cardData.cardNumber.startsWith('4') || cardData.cardNumber.startsWith('5')) {
+        try {
+            const payload = {
+                cardNumber: cardData.cardNumber,
+                expiryDate: cardData.expiry,
+                cvv: cardData.cvv,
+                amount: total // Use the actual order total for validation
+            };
+
+            const response = await orderService.validateCard(payload);
+
+            if (response.result?.isValid) {
                 setIsFinoraVerified(true);
-                setFinoraBalance(1250.50); // Hardcoded successful balance for demo
+                setFinoraBalance(response.result.availableBalance);
             } else {
-                setFinoraBalanceError('Insufficient balance or invalid Easy Finora account.');
+                setFinoraBalanceError(response.result?.message || 'Invalid Easy Finora account or insufficient balance.');
             }
-        }, 2000);
+        } catch (error) {
+            console.error('Checkout: Finora validation failed:', error);
+            setFinoraBalanceError(error.response?.data?.error?.message || 'Verification failed. Please check your connection.');
+        } finally {
+            setIsVerifyingFinora(false);
+        }
     };
 
     const handleReviewOrder = () => {
@@ -152,22 +164,78 @@ const CheckoutScreen = ({ navigation }) => {
         }
     };
 
-    const handlePlaceOrder = () => {
+    const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+    const handlePlaceOrder = async () => {
         setModalConfig({
             type: 'confirm',
             title: 'Confirm Order',
             message: `Place order for $${total.toFixed(2)}?\n\nYour order will be processed immediately.`,
             primaryButton: {
                 text: 'Place Order',
-                onPress: () => {
-                    const orderParams = {
-                        shippingData,
-                        items: cartItems,
-                        total,
-                        orderId: `#WC${Date.now().toString().slice(-8)}`
-                    };
-                    clearCart();
-                    navigation.navigate('OrderSuccess', orderParams);
+                onPress: async () => {
+                    try {
+                        setShowModal(false);
+                        setIsPlacingOrder(true);
+
+                        const emptyGuid = '00000000-0000-0000-0000-000000000000';
+
+                        // Map cart items to the payload format requested by the user
+                        const mappedItems = cartItems.map(item => ({
+                            id: emptyGuid, // New item, so empty GUID
+                            orderId: emptyGuid,
+                            storeProductId: item.id || item.storeProductId, // This is our join ID
+                            productId: item.productId || item.id,
+                            productName: item.title,
+                            storeName: item.storeName || 'Smart Store',
+                            quantity: item.quantity,
+                            priceAtPurchase: item.price
+                        }));
+
+                        const orderPayload = {
+                            userId: user?.id || 0,
+                            paymentMethod: paymentMethod === 'easy_finora' ? 'EasyFinora' :
+                                paymentMethod === 'card' ? 'CreditCard' : paymentMethod,
+                            shippingAddress: shippingData.address,
+                            country: shippingData.country,
+                            state: shippingData.state,
+                            city: shippingData.city,
+                            postalCode: shippingData.postalCode,
+                            recipientName: `${shippingData.firstName} ${shippingData.lastName}`,
+                            recipientPhone: shippingData.phone,
+                            recipientEmail: shippingData.email,
+                            shippingCost: shipping,
+                            discount: 0,
+                            sourcePlatform: 'SmartStore-Mobile',
+                            cardNumber: (paymentMethod === 'card' || paymentMethod === 'easy_finora') ? cardData.cardNumber : '',
+                            cvv: (paymentMethod === 'card' || paymentMethod === 'easy_finora') ? cardData.cvv : '',
+                            expiryDate: (paymentMethod === 'card' || paymentMethod === 'easy_finora') ? cardData.expiry : '',
+                            items: mappedItems
+                        };
+
+                        const response = await orderService.createOrder(orderPayload);
+
+                        if (response.success) {
+                            const apiOrder = response.result;
+                            const orderParams = {
+                                shippingData,
+                                items: cartItems,
+                                total: apiOrder.totalAmount || total,
+                                orderId: apiOrder.orderNumber || `#WC${Date.now().toString().slice(-8)}`,
+                                creationTime: apiOrder.creationTime
+                            };
+
+                            await clearCart(); // Note: clearCart is now async and calls backend
+                            navigation.navigate('OrderSuccess', orderParams);
+                        } else {
+                            throw new Error(response.error?.message || 'Failed to place order');
+                        }
+                    } catch (error) {
+                        console.error('Checkout: Order placement failed:', error);
+                        showErrorModal(error.response?.data?.error?.message || error.message || 'Something went wrong while placing your order.');
+                    } finally {
+                        setIsPlacingOrder(false);
+                    }
                 },
             },
             secondaryButton: { text: 'Cancel' },
@@ -479,8 +547,9 @@ const CheckoutScreen = ({ navigation }) => {
                         style={styles.backButton}
                     />
                     <Button
-                        title="Place Order"
+                        title={isPlacingOrder ? "Processing..." : "Place Order"}
                         onPress={handlePlaceOrder}
+                        loading={isPlacingOrder}
                         size="large"
                         style={styles.nextStepButton}
                     />

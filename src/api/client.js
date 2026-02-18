@@ -11,7 +11,7 @@ const apiClient = axios.create({
         'Abp-TenantId': '1',
         'X-Requested-With': 'XMLHttpRequest',
     },
-    timeout: 30000,
+    timeout: 300000, // Increased to 5 minutes due to backend email timeout issues
 });
 
 // Request interceptor to add auth token

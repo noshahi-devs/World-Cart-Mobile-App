@@ -336,7 +336,8 @@ const ProductDetailScreen = ({ route, navigation }) => {
                             <Star3D size={20} color="#FFD700" focused />
                             <View style={styles.ratingText}>
                                 <Text style={styles.ratingValue}>
-                                    {`${product.rating || '4.5'} • `}
+                                    <Text>{`${product.rating || '4.5'} `}</Text>
+                                    <Text style={styles.bulletSeparator}>• </Text>
                                     <Text style={styles.reviewText}>{`${product.reviews || '345'} Verified Reviews`}</Text>
                                 </Text>
                             </View>
