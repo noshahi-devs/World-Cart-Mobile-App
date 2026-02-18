@@ -306,27 +306,41 @@ const ProductDetailScreen = ({ route, navigation }) => {
                         {/* Brand & Stock Header */}
                         <View style={styles.headerRow}>
                             <View style={styles.brandLine}>
-                                <Text style={styles.brandName}>{`${product.brandName || 'Unknown Brand'} • `}</Text>
-                                <Text style={styles.soldByText}>{`Sold by ${product.store?.storeName || 'Merchant'}`}</Text>
+                                <Text style={styles.brandName}>
+                                    <Text>{product.brandName || 'Unknown Brand'}</Text>
+                                    <Text>{' • '}</Text>
+                                </Text>
+                                <Text style={styles.soldByText}>
+                                    <Text>{'Sold by '}</Text>
+                                    <Text>{product.store?.storeName || 'Merchant'}</Text>
+                                </Text>
                             </View>
                             <View style={[styles.stockIndicator, { backgroundColor: (stockQuantity > 0) ? COLORS.success + '15' : COLORS.error + '15' }]}>
                                 <Text style={[styles.stockText, { color: (stockQuantity > 0) ? COLORS.success : COLORS.error }]}>
-                                    {(stockQuantity > 0) ? 'In Stock' : 'Out of Stock'}
+                                    {stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
                                 </Text>
                             </View>
                         </View>
 
-                        <Text style={styles.title}>{product.title || ''}</Text>
+                        {product.title ? <Text style={styles.title}>{product.title}</Text> : null}
 
                         {/* Slug or extra metadata if needed */}
                         {product.slug ? <Text style={styles.reviewText}>{product.slug}</Text> : null}
 
                         <View style={styles.priceContainer}>
-                            <Text style={styles.price}>${currentPrice.toFixed(2)}</Text>
-                            {!!originalPrice && <Text style={styles.oldPrice}>${originalPrice.toFixed(2)}</Text>}
+                            <Text style={styles.price}>
+                                <Text>{`$${currentPrice.toFixed(2)}`}</Text>
+                            </Text>
+                            {!!originalPrice && (
+                                <Text style={styles.oldPrice}>
+                                    <Text>{`$${originalPrice.toFixed(2)}`}</Text>
+                                </Text>
+                            )}
                             {!!discount && (
                                 <View style={styles.discountTag}>
-                                    <Text style={styles.discountTagText}>Save {discount}%</Text>
+                                    <Text style={styles.discountTagText}>
+                                        <Text>{`Save ${discount}%`}</Text>
+                                    </Text>
                                 </View>
                             )}
                         </View>
@@ -337,7 +351,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                             <View style={styles.ratingText}>
                                 <Text style={styles.ratingValue}>
                                     <Text>{`${product.rating || '4.5'} `}</Text>
-                                    <Text style={styles.bulletSeparator}>• </Text>
+                                    <Text style={styles.bulletSeparator}>{'• '}</Text>
                                     <Text style={styles.reviewText}>{`${product.reviews || '345'} Verified Reviews`}</Text>
                                 </Text>
                             </View>

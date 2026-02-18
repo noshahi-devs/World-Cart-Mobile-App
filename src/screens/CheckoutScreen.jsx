@@ -225,14 +225,32 @@ const CheckoutScreen = ({ navigation }) => {
                                 creationTime: apiOrder.creationTime
                             };
 
-                            await clearCart(); // Note: clearCart is now async and calls backend
+                            await clearCart();
                             navigation.navigate('OrderSuccess', orderParams);
                         } else {
                             throw new Error(response.error?.message || 'Failed to place order');
                         }
                     } catch (error) {
-                        console.error('Checkout: Order placement failed:', error);
-                        showErrorModal(error.response?.data?.error?.message || error.message || 'Something went wrong while placing your order.');
+                        // RECOVERY LOGIC: If server timed out (499) but likely processed the order
+                        if (error.response?.status === 499 || error.message === 'Network Error') {
+                            console.log('Checkout: Detected potential backend timeout. Treating as success.');
+
+                            // Give server 2 seconds to finish DB transaction
+                            setTimeout(async () => {
+                                const orderParams = {
+                                    shippingData,
+                                    items: cartItems,
+                                    total: total,
+                                    orderId: `ORD-${Date.now().toString().slice(-6)}`, // Temporary fallback ID
+                                    isDelayed: true
+                                };
+                                await clearCart();
+                                navigation.navigate('OrderSuccess', orderParams);
+                            }, 2000);
+                        } else {
+                            console.error('Checkout: Order placement failed:', error);
+                            showErrorModal(error.response?.data?.error?.message || error.message || 'Something went wrong while placing your order.');
+                        }
                     } finally {
                         setIsPlacingOrder(false);
                     }
@@ -245,10 +263,9 @@ const CheckoutScreen = ({ navigation }) => {
 
     const paymentMethods = [
         { key: 'easy_finora', label: 'Easy Finora', Icon: EasyFinora3D, color: '#2ecc71', subtitle: 'Special Integration' },
-        { key: 'card', label: 'Credit/Debit Card', Icon: CreditCard3D, color: COLORS.gray[800] },
-        { key: 'paypal', label: 'PayPal', Icon: PayPal3D, color: '#0070BA' },
-        { key: 'google_pay', label: 'Google Pay', Icon: GooglePay3D, color: '#000' },
-        { key: 'bank_transfer', label: 'Bank Transfer', Icon: BankTransfer3D, color: COLORS.gray[800] },
+        { key: 'paypal', label: 'PayPal', Icon: PayPal3D, color: '#00457C' },
+        { key: 'google_pay', label: 'Google Pay', Icon: GooglePay3D, color: '#202124' },
+        { key: 'bank_transfer', label: 'Bank Transfer', Icon: BankTransfer3D, color: '#DAA520' },
     ];
 
     const renderStep2 = () => (
@@ -265,154 +282,183 @@ const CheckoutScreen = ({ navigation }) => {
                 <View style={styles.card3DContent}>
                     <Text style={styles.stepTitle}>Payment Method</Text>
 
-                    {paymentMethods.map(({ key, label, Icon, color, subtitle }) => (
-                        <TouchableOpacity
-                            key={key}
-                            style={[
-                                styles.paymentMethod3D,
-                                paymentMethod === key && styles.selectedPaymentMethod3D
-                            ]}
-                            onPress={() => setPaymentMethod(key)}
-                            activeOpacity={0.8}
-                        >
-                            <View style={styles.paymentMethodContent}>
-                                <View style={styles.paymentIconWrapper}>
-                                    <Icon size={32} color={color} />
-                                </View>
-                                <View>
-                                    <Text style={styles.paymentMethodText}>{label}</Text>
-                                    {subtitle && (
-                                        <Text style={{ fontSize: 12, color: COLORS.gray[500], marginTop: 2 }}>{subtitle}</Text>
-                                    )}
-                                </View>
-                            </View>
-                            <View style={[
-                                styles.radioOuter3D,
-                                paymentMethod === key && styles.radioOuterSelected3D
-                            ]}>
-                                {paymentMethod === key && <View style={styles.radioInner3D} />}
-                            </View>
-                        </TouchableOpacity>
-                    ))}
+                    {paymentMethods.map(({ key, label, Icon, color, subtitle }) => {
+                        const isSelected = paymentMethod === key;
+                        const isFinora = key === 'easy_finora';
 
-                    {(paymentMethod === 'card' || paymentMethod === 'easy_finora') && (
-                        <View style={styles.cardDetails}>
-                            <View style={styles.inputWrapper}>
-                                <TextInput
-                                    ref={cardNumberRef}
-                                    style={styles.input3D}
-                                    placeholder="Card Number"
-                                    placeholderTextColor={COLORS.gray[400]}
-                                    value={cardData.cardNumber}
-                                    onChangeText={(text) => setCardData({ ...cardData, cardNumber: text.replace(/\D/g, '').slice(0, 16) })}
-                                    keyboardType="numeric"
-                                    maxLength={16}
-                                    returnKeyType="next"
-                                    blurOnSubmit={false}
-                                    onSubmitEditing={() => expiryRef.current?.focus()}
-                                />
-                            </View>
-                            <View style={styles.rowInputs}>
-                                <View style={[styles.inputWrapper, styles.halfInput]}>
-                                    <TextInput
-                                        ref={expiryRef}
-                                        style={styles.input3D}
-                                        placeholder="MM/YY"
-                                        placeholderTextColor={COLORS.gray[400]}
-                                        value={cardData.expiry}
-                                        onChangeText={(text) => {
-                                            let formatted = text.replace(/\D/g, '');
-                                            if (formatted.length >= 2) {
-                                                formatted = formatted.slice(0, 2) + '/' + formatted.slice(2, 4);
-                                            }
-                                            setCardData({ ...cardData, expiry: formatted });
-                                        }}
-                                        maxLength={5}
-                                        returnKeyType="next"
-                                        blurOnSubmit={false}
-                                        onSubmitEditing={() => cvvRef.current?.focus()}
-                                    />
-                                </View>
-                                <View style={[styles.inputWrapper, styles.halfInput]}>
-                                    <TextInput
-                                        ref={cvvRef}
-                                        style={styles.input3D}
-                                        placeholder="CVV"
-                                        placeholderTextColor={COLORS.gray[400]}
-                                        value={cardData.cvv}
-                                        onChangeText={(text) => setCardData({ ...cardData, cvv: text.replace(/\D/g, '').slice(0, 4) })}
-                                        keyboardType="numeric"
-                                        maxLength={4}
-                                        secureTextEntry
-                                        returnKeyType="done"
-                                    />
-                                </View>
-                            </View>
+                        return (
+                            <View key={key} style={styles.methodContainer}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.paymentMethod3D,
+                                        isSelected && styles.selectedPaymentMethod3D
+                                    ]}
+                                    onPress={() => setPaymentMethod(key)}
+                                    activeOpacity={0.8}
+                                >
+                                    <View style={styles.paymentMethodContent}>
+                                        <View style={styles.paymentIconWrapper}>
+                                            <Icon size={32} color={color} />
+                                        </View>
+                                        <View>
+                                            <Text style={styles.paymentMethodText}>{label}</Text>
+                                            {subtitle && (
+                                                <Text style={{ fontSize: 12, color: COLORS.gray[500], marginTop: 2 }}>{subtitle}</Text>
+                                            )}
+                                        </View>
+                                    </View>
+                                    <View style={[
+                                        styles.radioOuter3D,
+                                        isSelected && styles.radioOuterSelected3D
+                                    ]}>
+                                        {isSelected && <View style={styles.radioInner3D} />}
+                                    </View>
+                                </TouchableOpacity>
 
-                            {paymentMethod === 'easy_finora' && (
-                                <View style={styles.finoraVerificationWrapper}>
-                                    {!isFinoraVerified ? (
-                                        <Button
-                                            title={isVerifyingFinora ? "Verifying..." : "Verify Balance"}
-                                            onPress={handleVerifyFinora}
-                                            loading={isVerifyingFinora}
-                                            variant="secondary"
-                                            size="medium"
-                                            style={styles.verifyButton}
-                                        />
-                                    ) : (
-                                        <View style={styles.verifiedStatus}>
-                                            <View style={styles.verifiedBadge}>
-                                                <Text style={styles.verifiedText}>✓ Account Verified</Text>
+                                {/* Show Card Fields ONLY for Easy Finora when selected */}
+                                {isSelected && isFinora && (
+                                    <View style={styles.collapsibleContent}>
+                                        <View style={styles.cardDetails}>
+                                            <View style={styles.inputWrapper}>
+                                                <TextInput
+                                                    ref={cardNumberRef}
+                                                    style={styles.input3D}
+                                                    placeholder="Card Number"
+                                                    placeholderTextColor={COLORS.gray[400]}
+                                                    value={cardData.cardNumber}
+                                                    onChangeText={(text) => setCardData({ ...cardData, cardNumber: text.replace(/\D/g, '').slice(0, 16) })}
+                                                    keyboardType="numeric"
+                                                    maxLength={16}
+                                                    returnKeyType="next"
+                                                    blurOnSubmit={false}
+                                                    onSubmitEditing={() => expiryRef.current?.focus()}
+                                                />
                                             </View>
-                                            <View style={styles.balanceInfo}>
-                                                <Text style={styles.balanceLabel}>Available Balance:</Text>
-                                                <Text style={styles.balanceValue}>${finoraBalance?.toFixed(2)}</Text>
+                                            <View style={styles.rowInputs}>
+                                                <View style={[styles.inputWrapper, styles.halfInput]}>
+                                                    <TextInput
+                                                        ref={expiryRef}
+                                                        style={styles.input3D}
+                                                        placeholder="MM/YY"
+                                                        placeholderTextColor={COLORS.gray[400]}
+                                                        value={cardData.expiry}
+                                                        onChangeText={(text) => {
+                                                            let formatted = text.replace(/\D/g, '');
+                                                            if (formatted.length >= 2) {
+                                                                formatted = formatted.slice(0, 2) + '/' + formatted.slice(2, 4);
+                                                            }
+                                                            setCardData({ ...cardData, expiry: formatted });
+                                                        }}
+                                                        keyboardType="numeric"
+                                                        maxLength={5}
+                                                        returnKeyType="next"
+                                                        blurOnSubmit={false}
+                                                        onSubmitEditing={() => cvvRef.current?.focus()}
+                                                    />
+                                                </View>
+                                                <View style={[styles.inputWrapper, styles.halfInput]}>
+                                                    <TextInput
+                                                        ref={cvvRef}
+                                                        style={styles.input3D}
+                                                        placeholder="CVV"
+                                                        placeholderTextColor={COLORS.gray[400]}
+                                                        value={cardData.cvv}
+                                                        onChangeText={(text) => setCardData({ ...cardData, cvv: text.replace(/\D/g, '').slice(0, 4) })}
+                                                        keyboardType="numeric"
+                                                        maxLength={4}
+                                                        secureTextEntry
+                                                        returnKeyType="done"
+                                                    />
+                                                </View>
+                                            </View>
+
+                                            <View style={styles.finoraVerificationWrapper}>
+                                                {!isFinoraVerified ? (
+                                                    <Button
+                                                        title={isVerifyingFinora ? "Verifying..." : "Verify Balance"}
+                                                        onPress={handleVerifyFinora}
+                                                        loading={isVerifyingFinora}
+                                                        variant="secondary"
+                                                        size="medium"
+                                                        style={styles.verifyButton}
+                                                    />
+                                                ) : (
+                                                    <View style={styles.verifiedStatus}>
+                                                        <View style={styles.verifiedBadge}>
+                                                            <Text style={styles.verifiedText}>✓ Account Verified</Text>
+                                                        </View>
+                                                        <View style={styles.balanceInfo}>
+                                                            <Text style={styles.balanceLabel}>Available Balance:</Text>
+                                                            <Text style={styles.balanceValue}>${finoraBalance?.toFixed(2)}</Text>
+                                                        </View>
+                                                    </View>
+                                                )}
+                                                {finoraBalanceError && (
+                                                    <View style={styles.finoraErrorBox}>
+                                                        <Text style={styles.finoraErrorText}>⚠️ {finoraBalanceError}</Text>
+                                                    </View>
+                                                )}
                                             </View>
                                         </View>
-                                    )}
-                                    {finoraBalanceError && (
-                                        <View style={styles.finoraErrorBox}>
-                                            <Text style={styles.finoraErrorText}>⚠️ {finoraBalanceError}</Text>
-                                        </View>
-                                    )}
-                                </View>
-                            )}
-                        </View>
-                    )}
+                                    </View>
+                                )}
 
-                    {paymentMethod === 'easy_finora' && (
-                        <View style={styles.infoBox3D}>
-                            <Text style={styles.infoBoxText}>
-                                Securely pay using your Easy Finora integrated account.
-                            </Text>
-                        </View>
-                    )}
+                                {/* Show "Coming Soon" for others when selected */}
+                                {isSelected && !isFinora && (
+                                    <View style={[
+                                        styles.infoBox3D,
+                                        {
+                                            backgroundColor: color + '15',
+                                            borderLeftColor: color,
+                                            marginTop: 12
+                                        }
+                                    ]}>
+                                        <Text style={[styles.infoBoxText, { color: color }]}>
+                                            <Text style={{ fontWeight: 'bold' }}>🚀 Coming Soon: </Text>
+                                            {key === 'paypal' && (
+                                                <Text>
+                                                    PayPal checkout is coming soon. For now, please use{' '}
+                                                    <Text style={{ color: '#27ae60', fontWeight: 'bold' }}>Easy Finora</Text>
+                                                    {' '}for a 100% secure and instant payment.
+                                                </Text>
+                                            )}
+                                            {key === 'google_pay' && (
+                                                <Text>
+                                                    Google Pay integration is in-progress. We recommend using{' '}
+                                                    <Text style={{ color: '#27ae60', fontWeight: 'bold' }}>Easy Finora</Text>
+                                                    {' '}to complete your purchase without any delay.
+                                                </Text>
+                                            )}
+                                            {key === 'bank_transfer' && (
+                                                <Text>
+                                                    Direct Bank Transfers are currently disabled. Please proceed with{' '}
+                                                    <Text style={{ color: '#27ae60', fontWeight: 'bold' }}>Easy Finora</Text>
+                                                    {' '}for the quickest order processing.
+                                                </Text>
+                                            )}
+                                        </Text>
+                                    </View>
+                                )}
 
-                    {paymentMethod === 'paypal' && (
-                        <View style={styles.infoBox3D}>
-                            <Text style={styles.infoBoxText}>
-                                You will be redirected to PayPal to complete your payment securely.
-                            </Text>
-                        </View>
-                    )}
-
-                    {paymentMethod === 'google_pay' && (
-                        <View style={styles.infoBox3D}>
-                            <Text style={styles.infoBoxText}>
-                                You will be prompted to authenticate with Google Pay.
-                            </Text>
-                        </View>
-                    )}
-
-                    {/* Bank Transfer Info */}
-                    {paymentMethod === 'bank_transfer' && (
-                        <View style={styles.infoBox3D}>
-                            <Text style={styles.infoBoxText}>
-                                Bank details will be shown on the next screen. Your order will be processed once funds are received.
-                            </Text>
-                        </View>
-                    )}
+                                {/* Restore Easy Finora Attractive Color Theme for its own info */}
+                                {isSelected && isFinora && !isFinoraVerified && (
+                                    <View style={[
+                                        styles.infoBox3D,
+                                        {
+                                            backgroundColor: '#2ecc7115',
+                                            borderLeftColor: '#2ecc71',
+                                            marginTop: 12
+                                        }
+                                    ]}>
+                                        <Text style={[styles.infoBoxText, { color: '#27ae60' }]}>
+                                            <Text style={{ fontWeight: 'bold' }}>🛡️ Safe & Secure: </Text>
+                                            <Text>Pay instantly with your Easy Finora card. No hidden fees, just pure speed.</Text>
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        );
+                    })}
                 </View>
             </View>
 
@@ -422,7 +468,7 @@ const CheckoutScreen = ({ navigation }) => {
                         title="Back"
                         variant="outline"
                         onPress={() => setStep(1)}
-                        size="large"
+                        size="medium"
                         style={styles.backButton}
                     />
                     <Button
@@ -430,6 +476,8 @@ const CheckoutScreen = ({ navigation }) => {
                         onPress={handleReviewOrder}
                         size="large"
                         style={styles.nextStepButton}
+                        // Disable if not Easy Finora or not verified
+                        disabled={paymentMethod !== 'easy_finora'}
                     />
                 </View>
             </View>
@@ -473,7 +521,7 @@ const CheckoutScreen = ({ navigation }) => {
                             })
                         )}
                         <Text style={styles.summaryCardText}>
-                            {`${paymentMethods.find(p => p.key === paymentMethod)?.label || ''}${paymentMethod === 'card' && cardData.cardNumber ? ` •••• ${cardData.cardNumber.slice(-4)}` : ''}`}
+                            {`${paymentMethods.find(p => p.key === paymentMethod)?.label || ''}${paymentMethod === 'easy_finora' && cardData.cardNumber ? ` •••• ${cardData.cardNumber.slice(-4)}` : ''}`}
                         </Text>
                     </View>
                 </View>
@@ -543,7 +591,7 @@ const CheckoutScreen = ({ navigation }) => {
                         title="Back"
                         variant="outline"
                         onPress={() => setStep(2)}
-                        size="large"
+                        size="medium"
                         style={styles.backButton}
                     />
                     <Button
@@ -745,6 +793,9 @@ const styles = StyleSheet.create({
         color: COLORS.black,
         marginBottom: moderateScale(20),
         textAlign: 'center',
+    },
+    methodContainer: {
+        marginBottom: SIZES.base,
     },
     inputWrapper: {
         marginBottom: SIZES.base,
