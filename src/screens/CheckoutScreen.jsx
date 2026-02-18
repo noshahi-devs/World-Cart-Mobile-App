@@ -405,8 +405,7 @@ const CheckoutScreen = ({ navigation }) => {
                             })
                         )}
                         <Text style={styles.summaryCardText}>
-                            {' '}{paymentMethods.find(p => p.key === paymentMethod)?.label}
-                            {paymentMethod === 'card' && cardData.cardNumber ? ` •••• ${cardData.cardNumber.slice(-4)}` : ''}
+                            {`${paymentMethods.find(p => p.key === paymentMethod)?.label || ''}${paymentMethod === 'card' && cardData.cardNumber ? ` •••• ${cardData.cardNumber.slice(-4)}` : ''}`}
                         </Text>
                     </View>
                 </View>
@@ -424,10 +423,10 @@ const CheckoutScreen = ({ navigation }) => {
                             <View style={styles.summaryItemInfo}>
                                 <Text style={styles.summaryItemTitle} numberOfLines={1}>{item.title}</Text>
                                 <Text style={styles.summaryItemDetails}>
-                                    {item.size} • {item.color || 'No Color'}
+                                    {`${item.size || 'N/A'} • ${item.color || 'No Color'}`}
                                 </Text>
                                 <Text style={styles.summaryItemQuantity}>
-                                    Qty: {item.quantity} {item.quantity > 1 && <Text style={styles.summaryItemUnit}> (@ ${item.price.toFixed(2)})</Text>}
+                                    {`Qty: ${item.quantity}${item.quantity > 1 ? ` (@ $${item.price.toFixed(2)})` : ''}`}
                                 </Text>
                             </View>
                             <Text style={styles.summaryItemPrice}>

@@ -3,13 +3,15 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, useWindowDim
 import { HeartOutline, HeartFilled, CartFilled } from './TabIcons';
 import { Star3D } from './ThreeDIcons';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import { COLORS, SIZES } from '../constants/theme';
 import { rf, moderateScale } from '../utils/responsive';
 import { resolveImagePath } from '../utils/imagePathHelper';
 
 const ProductCard = ({ product, onPress, containerStyle }) => {
     const { width } = useWindowDimensions();
-    const { toggleWishlist, addToCart } = useCart();
+    const { addToCart } = useCart();
+    const { toggleWishlist, isWishlisted } = useWishlist();
 
     // Consistent column logic
     const numColumns = width >= 1440 ? 5 : (width >= 1024 ? 4 : (width >= 768 ? 3 : 2));
@@ -81,7 +83,7 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
     };
 
     const handleWishlistPress = () => {
-        toggleWishlist(product.id);
+        toggleWishlist(product);
     };
 
     const handleAddToCart = () => {
@@ -111,7 +113,7 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                         onPress={handleWishlistPress}
                         activeOpacity={0.8}
                     >
-                        {product.wishlisted ? (
+                        {isWishlisted(product.productId || product.id) ? (
                             <HeartFilled size={18} color={COLORS.secondary} />
                         ) : (
                             <HeartOutline size={18} color={COLORS.gray[500]} />
@@ -151,7 +153,7 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                             <View style={styles.ratingContainer}>
                                 <Star3D size={12} color="#FFD700" focused />
                                 <Text style={styles.ratingText}>
-                                    {product.rating || '4.5'} • <Text style={styles.reviewText}>{product.reviews || 0} Reviews</Text>
+                                    {`${product.rating || '4.5'} • `}<Text style={styles.reviewText}>{product.reviews || 0} Reviews</Text>
                                 </Text>
                             </View>
                         </View>

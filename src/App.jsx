@@ -7,6 +7,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
+import { WishlistProvider } from './context/WishlistContext';
 import AppNavigator from './navigation/AppNavigator';
 import SplashScreen from './screens/SplashScreen';
 
@@ -31,12 +32,14 @@ export default function App() {
         <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
             <SafeAreaProvider>
                 <AuthProvider>
-                    <CartProvider>
-                        <NavigationContainer>
-                            <AppNavigator />
-                            <StatusBar style="dark" backgroundColor="#FFFFFF" />
-                        </NavigationContainer>
-                    </CartProvider>
+                    <WishlistProvider>
+                        <CartProvider>
+                            <NavigationContainer>
+                                <AppNavigator />
+                                <StatusBar style="dark" backgroundColor="#FFFFFF" />
+                            </NavigationContainer>
+                        </CartProvider>
+                    </WishlistProvider>
                 </AuthProvider>
             </SafeAreaProvider>
 

@@ -148,8 +148,7 @@ const OrderTrackingScreen = () => {
                             <View style={styles.itemInfo}>
                                 <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
                                 <Text style={styles.itemDetail}>
-                                    {item.size ? `Size: ${item.size} • ` : ''}
-                                    Qty: {item.quantity || 1}
+                                    {`${item.size ? `Size: ${item.size} • ` : ''}Qty: ${item.quantity || 1}`}
                                 </Text>
                                 <Text style={styles.itemPrice}>${(item.price || 0).toFixed(2)}</Text>
                             </View>

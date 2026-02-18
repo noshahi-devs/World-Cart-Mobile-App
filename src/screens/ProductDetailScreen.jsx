@@ -16,20 +16,22 @@ import { rf, moderateScale } from '../utils/responsive';
 import { Star3D, Minus3D, Plus3D, Heart3D } from '../components/ThreeDIcons';
 import { CartFilled } from '../components/TabIcons';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import CustomModal from '../components/CustomModal';
 import Header from '../components/Header';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { catalogService } from '../services/catalogService';
-import { BASE_URL } from '../api/client';
+import { resolveImagePath } from '../utils/imagePathHelper';
 
 const { width } = Dimensions.get('window');
 
 const ProductDetailScreen = ({ route, navigation }) => {
     // FIXED: Safely get productId with fallback
     const { productId } = route.params || {};
-    const { addToCart, toggleWishlist } = useCart();
+    const { addToCart } = useCart();
+    const { toggleWishlist, isWishlisted } = useWishlist();
     const { user } = useAuth();
     const insets = useSafeAreaInsets();
 
@@ -172,7 +174,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
             });
             return;
         }
-        toggleWishlist(product.productId || product.id);
+        toggleWishlist(product);
     };
 
     const handleScroll = Animated.event(
@@ -198,38 +200,34 @@ const ProductDetailScreen = ({ route, navigation }) => {
         return colors[colorName] || '#CCCCCC';
     };
 
-    // FIXED: Properly handle image URLs with HTTPS enforcement
-    const normalizeImageUrl = (imageUrl) => {
-        if (!imageUrl) return null;
+    // Use the same resolveImagePath utility as ProductCard (handles JSON arrays, escaped quotes, etc.)
+    const productImages = (() => {
+        const placeholder = 'https://via.placeholder.com/400?text=No+Image';
 
-        // If already a full HTTPS URL, return as is
-        if (imageUrl.startsWith('https://')) return imageUrl;
-
-        // If HTTP, convert to HTTPS (Android 9+ blocks HTTP)
-        if (imageUrl.startsWith('http://')) {
-            console.warn('Converting HTTP to HTTPS:', imageUrl);
-            return imageUrl.replace('http://', 'https://');
+        if (product.images?.length > 0) {
+            const resolved = product.images
+                .map(img => resolveImagePath(img))
+                .filter(url => url && url !== placeholder);
+            if (resolved.length > 0) return resolved;
         }
 
-        // If relative path, prepend BASE_URL
-        if (imageUrl.startsWith('/')) {
-            return `${BASE_URL}${imageUrl}`;
+        if (product.image) {
+            const resolved = resolveImagePath(product.image);
+            if (resolved && resolved !== placeholder) return [resolved];
         }
 
-        // If no protocol, assume relative and prepend BASE_URL
-        return `${BASE_URL}/${imageUrl}`;
-    };
+        if (product.image1) {
+            const resolved = resolveImagePath(product.image1);
+            if (resolved && resolved !== placeholder) return [resolved];
+        }
 
-    const productImages = product.images?.length > 0
-        ? product.images.map(img => normalizeImageUrl(img)).filter(url => url !== null)
-        : product.image
-            ? [normalizeImageUrl(product.image)].filter(url => url !== null)
-            : ['https://via.placeholder.com/400'];
+        if (product.imageUrl) {
+            const resolved = resolveImagePath(product.imageUrl);
+            if (resolved && resolved !== placeholder) return [resolved];
+        }
 
-    // Ensure we always have at least one image
-    if (productImages.length === 0) {
-        productImages.push('https://via.placeholder.com/400');
-    }
+        return [placeholder];
+    })();
 
     const currentPrice = product.store?.price || product.price || 0;
     const originalPrice = product.store?.originalPrice || product.oldPrice;
@@ -241,7 +239,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
             <Header
                 title=""
                 leftIcon="arrow-left"
-                rightIcon={product.wishlisted ? "heart" : "heart-outline"}
+                rightIcon={isWishlisted(product.productId || product.id) ? "heart" : "heart-outline"}
                 onLeftPress={() => navigation.goBack()}
                 onRightPress={handleWishlistToggle}
             />

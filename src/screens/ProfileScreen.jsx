@@ -32,11 +32,13 @@ import { profileData, orders, addresses, paymentMethods } from '../constants/dat
 import { COLORS, SIZES } from '../constants/theme';
 import { moderateScale, rf, verticalScale } from '../utils/responsive';
 import { CreditCardIcon } from '../components/TabIcons';
+import { useWishlist } from '../context/WishlistContext';
 
 const ProfileScreen = ({ navigation }) => {
     // Removed products from useCart - will use Wishlist API later
     const { getCartItemCount } = useCart();
     const { user, logout } = useAuth();
+    const { wishlistItems, removeFromWishlist } = useWishlist();
     const insets = useSafeAreaInsets();
 
     // Modal State
@@ -77,9 +79,6 @@ const ProfileScreen = ({ navigation }) => {
 
     const [activeSection, setActiveSection] = useState('orders');
 
-    // TODO: Fetch wishlist from backend API
-    // For now, empty array (will implement Wishlist API later)
-    const wishlistItems = [];
 
     // Animations for Guest View
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -215,17 +214,38 @@ const ProfileScreen = ({ navigation }) => {
                 </View>
             ) : (
                 <View style={styles.wishlistGrid}>
-                    {wishlistItems.map((item) => (
-                        <TouchableOpacity
-                            key={item.id}
-                            style={styles.wishlistItem}
-                            onPress={() => navigation.navigate('ProductDetail', { productId: item.id })}
-                        >
-                            <Image source={{ uri: item.image }} style={styles.wishlistImage} />
-                            <Text style={styles.wishlistTitle} numberOfLines={2}>{item.title}</Text>
-                            <Text style={styles.wishlistPrice}>${item.price.toFixed(2)}</Text>
-                        </TouchableOpacity>
-                    ))}
+                    {wishlistItems.map((item) => {
+                        const itemId = item.productId || item.id;
+                        return (
+                            <TouchableOpacity
+                                key={itemId}
+                                style={styles.wishlistItem}
+                                onPress={() => navigation.navigate('ProductDetail', { productId: itemId })}
+                                activeOpacity={0.8}
+                            >
+                                <Image
+                                    source={{ uri: item.image1 || item.image || item.imageUrl || 'https://via.placeholder.com/150' }}
+                                    style={styles.wishlistImage}
+                                    resizeMode="contain"
+                                />
+                                {/* Delete button - top right */}
+                                <TouchableOpacity
+                                    style={styles.wishlistDeleteBtn}
+                                    onPress={() => removeFromWishlist(itemId)}
+                                    activeOpacity={0.8}
+                                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                                >
+                                    <Text style={styles.wishlistDeleteIcon}>✕</Text>
+                                </TouchableOpacity>
+                                <Text style={styles.wishlistTitle} numberOfLines={2}>
+                                    {item.title || item.name || 'Product'}
+                                </Text>
+                                <Text style={styles.wishlistPrice}>
+                                    ${item.price ? item.price.toFixed(2) : '0.00'}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
             )}
         </View>
@@ -1017,6 +1037,7 @@ const styles = StyleSheet.create({
     wishlistItem: {
         width: (SIZES.width - 48) / 2,
         marginBottom: SIZES.padding,
+        position: 'relative',
     },
     wishlistImage: {
         width: '100%',
@@ -1034,6 +1055,24 @@ const styles = StyleSheet.create({
         fontSize: SIZES.body1,
         fontWeight: 'bold',
         color: COLORS.black,
+    },
+    wishlistDeleteBtn: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: 'rgba(0,0,0,0.55)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    wishlistDeleteIcon: {
+        color: '#FFFFFF',
+        fontSize: 13,
+        fontWeight: 'bold',
+        lineHeight: 15,
     },
     addressCard: {
         backgroundColor: COLORS.gray[100],

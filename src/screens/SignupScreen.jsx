@@ -96,22 +96,18 @@ const SignupScreen = () => {
         }),
         top: phoneLabelAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [18, -12], // Match FloatingLabelInput
+            outputRange: [26, 4], // Match updated FloatingLabelInput
         }),
         fontSize: phoneLabelAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [16, 12],
+            outputRange: [15, 12],
         }),
         color: phoneLabelAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [propsError('phone') ? COLORS.danger : COLORS.gray[500], propsError('phone') ? COLORS.danger : COLORS.primary],
+            outputRange: [propsError('phone') ? COLORS.danger : COLORS.gray[400], propsError('phone') ? COLORS.danger : COLORS.primary],
         }),
-        backgroundColor: phoneLabelAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['transparent', COLORS.white],
-        }),
+        backgroundColor: COLORS.white,
         paddingHorizontal: 4,
-        borderRadius: 4,
         zIndex: 10,
     };
 
@@ -431,7 +427,8 @@ const styles = StyleSheet.create({
     phoneSection: {
         position: 'relative',
         zIndex: 100,
-        marginBottom: 24, // Match FloatingLabelInput
+        paddingTop: 14,      // Room for floating label
+        marginBottom: 20,
     },
 
     phoneContainer: {
