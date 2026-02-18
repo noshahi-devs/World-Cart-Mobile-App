@@ -26,9 +26,23 @@ const EditProfileScreen = ({ navigation }) => {
     const { user, updateProfile } = useAuth();
     const insets = useSafeAreaInsets();
 
-    const [firstName, setFirstName] = useState(user?.firstName || '');
-    const [lastName, setLastName] = useState(user?.lastName || '');
-    const [email, setEmail] = useState(user?.email || '');
+    // Helper to get first/last name if they are missing but fullName exists
+    const getInitialNames = () => {
+        if (user?.firstName) return { first: user.firstName, last: user.lastName || '' };
+        if (user?.fullName) {
+            const parts = user.fullName.split(' ');
+            return {
+                first: parts[0] || '',
+                last: parts.slice(1).join(' ') || ''
+            };
+        }
+        return { first: '', last: '' };
+    };
+
+    const initialNames = getInitialNames();
+    const [firstName, setFirstName] = useState(initialNames.first);
+    const [lastName, setLastName] = useState(initialNames.last);
+    const [email, setEmail] = useState(user?.emailAddress || user?.email || '');
     const [phone, setPhone] = useState(user?.phone || '');
     const [country, setCountry] = useState(user?.country || '');
     const [profileImage, setProfileImage] = useState(user?.profileImage || null);
@@ -153,14 +167,22 @@ const EditProfileScreen = ({ navigation }) => {
                         <View style={styles.decorCircle1} />
                         <View style={styles.decorCircle2} />
 
-                        <View style={styles.profileImageContainer}>
+                        <TouchableOpacity
+                            style={styles.profileImageContainer}
+                            onPress={pickImage}
+                            activeOpacity={0.9}
+                        >
                             <View style={styles.imageWrapper}>
                                 <Image
-                                    source={require('../assets/icons/World-Cart.png')}
+                                    source={profileImage ? { uri: profileImage } : require('../assets/icons/World-Cart.png')}
                                     style={styles.image}
                                 />
+                                <View style={styles.editIconWrapper}>
+                                    <Camera size={18} color={COLORS.white} />
+                                </View>
                             </View>
-                        </View>
+                            <Text style={styles.changePhotoText}>Change Photo</Text>
+                        </TouchableOpacity>
                     </View>
 
                     {/* Form Section */}

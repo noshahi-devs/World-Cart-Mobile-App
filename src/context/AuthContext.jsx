@@ -134,6 +134,27 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // 📝 UPDATE PROFILE (LOCAL ONLY AS REQUESTED)
+    const updateProfile = async (profileData) => {
+        try {
+            const updatedUser = {
+                ...user,
+                ...profileData,
+                // Automatically update fullName if names exist
+                fullName: profileData.firstName && profileData.lastName
+                    ? `${profileData.firstName} ${profileData.lastName}`
+                    : user?.fullName
+            };
+
+            setUser(updatedUser);
+            await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to update profile locally:', error);
+            return { success: false, message: 'Failed to save changes.' };
+        }
+    };
+
     const value = {
         user,
         loading,
@@ -141,7 +162,8 @@ export const AuthProvider = ({ children }) => {
         signup,
         forgotPassword,
         resetPassword,
-        logout
+        logout,
+        updateProfile
     };
 
     return (
