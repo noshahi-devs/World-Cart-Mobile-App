@@ -192,8 +192,8 @@ const SignupScreen = () => {
                             <View style={styles.cardLayerMiddle} />
 
                             <View style={styles.card3DContent}>
-                                <Text style={styles.formTitle}>Create Account</Text>
-                                <Text style={styles.subtitle}>Join us and start shopping today!</Text>
+                                <Text style={styles.formTitle}>{`Create Account`}</Text>
+                                <Text style={styles.subtitle}>{`Join us and start shopping today!`}</Text>
 
                                 <View style={styles.inputsSection}>
                                     <FloatingLabelInput
@@ -219,7 +219,7 @@ const SignupScreen = () => {
                                     />
 
                                     <View style={styles.phoneSection}>
-                                        <Animated.Text style={phoneLabelStyle}>Phone Number</Animated.Text>
+                                        <Animated.Text style={phoneLabelStyle}>{`Phone Number`}</Animated.Text>
                                         <View style={[
                                             styles.phoneContainer,
                                             {
@@ -320,7 +320,7 @@ const SignupScreen = () => {
                                     />
                                 </View>
 
-                                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                                {error ? <Text style={styles.errorText}>{`${error}`}</Text> : null}
 
                                 <TouchableOpacity
                                     style={[styles.button3D, isLoading && styles.buttonDisabled]}
@@ -331,15 +331,12 @@ const SignupScreen = () => {
                                     {isLoading ? (
                                         <ActivityIndicator size="small" color={COLORS.white} />
                                     ) : (
-                                        <Text style={styles.buttonText}>Sign Up</Text>
+                                        <Text style={styles.buttonText}>{`Sign Up`}</Text>
                                     )}
                                 </TouchableOpacity>
 
                                 <View style={styles.footer}>
-                                    <Text style={styles.footerText}>Already have an account? </Text>
-                                    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                                        <Text style={styles.loginText}>Log In</Text>
-                                    </TouchableOpacity>
+                                    <Text style={styles.footerText}>{`Already have an account? `}<Text style={styles.loginText} onPress={() => navigation.navigate('Login')}>{`Log In`}</Text></Text>
                                 </View>
                             </View>
                         </View>

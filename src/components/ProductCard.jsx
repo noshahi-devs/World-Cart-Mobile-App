@@ -132,7 +132,7 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                 {/* Info Container */}
                 <View style={styles.infoContainer}>
                     <Text style={styles.brandLine} numberOfLines={1}>
-                        <Text style={styles.brandName}>{product.categoryName || product.brand || product.category || 'World'}</Text><Text style={styles.brandSeparator}> • </Text><Text style={styles.soldByText}>Sold by {product.storeName || 'Merchant'}</Text>
+                        <Text style={styles.brandName}>{product.categoryName || product.brand || product.category || 'World'}</Text><Text style={styles.brandSeparator}>{` • `}</Text><Text style={styles.soldByText}>{`Sold by ${product.storeName || 'Merchant'}`}</Text>
                     </Text>
 
                     <Text style={styles.title} numberOfLines={2}>
@@ -143,9 +143,9 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                         <View style={styles.priceRatingColumn}>
                             <View style={styles.priceContainer}>
                                 <Text style={styles.price}>${product.price ? product.price.toFixed(2) : '0.00'}</Text>
-                                {(product.originalPrice || product.oldPrice) && (
+                                {((product.originalPrice || product.oldPrice) && (product.originalPrice || product.oldPrice) !== product.price) && (
                                     <Text style={styles.oldPrice}>
-                                        ${(product.originalPrice || product.oldPrice).toFixed(2)}
+                                        {`$${(product.originalPrice || product.oldPrice).toFixed(2)}`}
                                     </Text>
                                 )}
                             </View>
@@ -198,6 +198,12 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
+    },
+    phoneSection: {
+        position: 'relative',
+        zIndex: 100,
+        paddingTop: 14,      // Room for floating label - MATCHES FloatingLabelInput
+        marginBottom: 20,
     },
     wishlistButton: {
         position: 'absolute',

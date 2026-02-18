@@ -5,16 +5,58 @@ export const cartService = {
      * Add item to cart
      * POST /api/services/app/Cart/AddToCart
      */
-    addToCart: async (storeProductId, quantity = 1, userId = 0) => {
+    addToCart: async (product, quantity = 1, userId = 0) => {
+        const emptyGuid = '00000000-0000-0000-0000-000000000000';
+        let selectedTargetId = null;
+
         try {
-            const response = await apiClient.post('/api/services/app/Cart/AddToCart', {
-                userId: userId, // Use provided userId or 0 for guest
-                storeProductId,
-                quantity
-            });
+            // Robust ID selection: prefer productId, fallback to id, then storeProductId, but avoid empty GUIDs
+            if (product.productId && product.productId !== emptyGuid) {
+                selectedTargetId = product.productId;
+            } else if (product.id && product.id !== emptyGuid) {
+                selectedTargetId = product.id;
+            } else if (product.storeProductId && product.storeProductId !== emptyGuid) {
+                selectedTargetId = product.storeProductId;
+            }
+
+            if (!selectedTargetId) {
+                console.error('CartService: No valid ID found for product:', product);
+                throw new Error('Invalid product ID');
+            }
+
+            // Robust payload: try both productId and storeProductId keys
+            const payload = {
+                productId: selectedTargetId,
+                storeProductId: selectedTargetId,
+                quantity: quantity
+            };
+
+            // Add storeId if available
+            const storeId = product.store?.storeId || product.storeId;
+            if (storeId) {
+                payload.storeId = storeId;
+            }
+
+            console.log('CartService - Attempting AddToCart with payload:', JSON.stringify(payload, null, 2));
+
+            // Only send userId if it's a real value (non-zero)
+            if (userId && userId !== 0) {
+                payload.userId = userId;
+            }
+
+            const response = await apiClient.post('/api/services/app/Cart/AddToCart', payload);
+            console.log('CartService - AddToCart Success:', response.data);
             return response.data;
         } catch (error) {
-            console.error('Error adding to cart:', error);
+            console.error('Error adding to cart:', {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data,
+                productTitle: product?.title,
+                selectedTargetId,
+                quantity,
+                userId
+            });
             throw error;
         }
     },

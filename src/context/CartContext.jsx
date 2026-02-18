@@ -54,8 +54,17 @@ export const CartProvider = ({ children }) => {
 
     const addToCart = async (product, quantity = 1, size = null, color = null) => {
         try {
-            // Add to backend with userId if available
-            await cartService.addToCart(product.productId || product.id, quantity, user?.id || 0);
+            // Robust ID selection check
+            const emptyGuid = '00000000-0000-0000-0000-000000000000';
+            const targetId = product.productId || product.id || product.storeProductId;
+
+            if (!targetId || targetId === emptyGuid) {
+                console.error('CartContext: No valid ID for product:', product);
+                throw new Error('Invalid product ID');
+            }
+
+            // Sync with backend: pass full product so service can select best ID
+            await cartService.addToCart(product, quantity, user?.id || 0);
 
             // Update local state
             setCartItems(prevCart => {

@@ -132,7 +132,7 @@ const VerificationScreen = () => {
                     </Animated.View>
                     <Text style={styles.title}>Check Your Email</Text>
                     <Text style={styles.description}>
-                        We've sent a verification link to{"\n"}
+                        {`We've sent a verification link to\n`}
                         <Text style={styles.emailText}>{email || "your email address"}</Text>
                     </Text>
                     <View style={styles.card3D}>
@@ -142,23 +142,23 @@ const VerificationScreen = () => {
                             <View style={[styles.strip, { backgroundColor: GoogleColors.yellow }]} />
                             <View style={[styles.strip, { backgroundColor: GoogleColors.green }]} />
                         </View>
-                        <Text style={styles.infoText}>Please check your inbox (and spam folder) to verify your account. Once verified, you can log in to explore World-Cart.</Text>
+                        <Text style={styles.infoText}>{`Please check your inbox (and spam folder) to verify your account. Once verified, you can log in to explore World-Cart.`}</Text>
                     </View>
 
                     <TouchableOpacity
                         style={styles.openGmailButton}
                         onPress={handleOpenGmail}
                         activeOpacity={0.8}
-                    ><Ionicons name="mail" size={24} color={COLORS.white} style={{ marginRight: 12 }} /><Text style={styles.openGmailButtonText}>Open Gmail App</Text></TouchableOpacity>
+                    ><Ionicons name="mail" size={24} color={COLORS.white} style={{ marginRight: 12 }} /><Text style={styles.openGmailButtonText}>{`Open Gmail App`}</Text></TouchableOpacity>
                     <TouchableOpacity
                         style={styles.loginButton}
                         onPress={() => navigation.replace('Login')}
                         activeOpacity={0.8}
-                    ><Text style={styles.loginButtonText}>Go to Login</Text></TouchableOpacity>
+                    ><Text style={styles.loginButtonText}>{`Go to Login`}</Text></TouchableOpacity>
                     <TouchableOpacity
                         style={styles.resendButton}
                         onPress={() => setShowResendModal(true)}
-                    ><Text style={styles.resendText}>Didn't receive code? <Text style={styles.resendLink}>Resend</Text></Text></TouchableOpacity>
+                    ><Text style={styles.resendText}>{`Didn't receive code? `}<Text style={styles.resendLink}>{`Resend`}</Text></Text></TouchableOpacity>
                 </Animated.View>
             </ScrollView>
 

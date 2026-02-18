@@ -67,15 +67,14 @@ const ProductDetailScreen = ({ route, navigation }) => {
             // FIXED: Pass the productId directly - validation is now in service
             const data = await catalogService.getProductDetail(productId);
 
-            // Enhanced debugging for brand and images
-            console.log('=== PRODUCT DETAIL DEBUG ===');
-            console.log('Product ID:', productId);
-            console.log('Brand from API:', data?.brandName);
-            console.log('Category from API:', data?.category?.name);
-            console.log('Images from API:', data?.images);
-            console.log('Image from API:', data?.image);
-            console.log('Full Product Data:', JSON.stringify(data, null, 2));
-            console.log('=========================');
+            if (data) {
+                console.log('=== PRODUCT DETAIL RESPONSE KEYS ===');
+                console.log(Object.keys(data));
+                console.log('Main Store ID:', data.store?.storeId);
+                if (data.otherStores?.length > 0) {
+                    console.log('First Other Store Keys:', Object.keys(data.otherStores[0]));
+                }
+            }
 
             setProduct(data);
 
@@ -308,7 +307,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                         {/* Brand & Stock Header */}
                         <View style={styles.headerRow}>
                             <View style={styles.brandLine}>
-                                <Text style={styles.brandName}>{product.brandName ? product.brandName : 'Unknown Brand'}</Text><Text style={styles.brandSeparator}> • </Text><Text style={styles.soldByText}>Sold by {product.store?.storeName || 'Merchant'}</Text>
+                                <Text style={styles.brandName}>{`${product.brandName ? product.brandName : 'Unknown Brand'}`}</Text><Text style={styles.brandSeparator}>{` • `}</Text><Text style={styles.soldByText}>{`Sold by ${product.store?.storeName || 'Merchant'}`}</Text>
                             </View>
                             <View style={[styles.stockIndicator, { backgroundColor: (stockQuantity > 0) ? COLORS.success + '15' : COLORS.error + '15' }]}>
                                 <Text style={[styles.stockText, { color: (stockQuantity > 0) ? COLORS.success : COLORS.error }]}>
@@ -338,7 +337,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                                 <Star3D size={20} color="#FFD700" focused />
                             </View>
                             <View style={styles.ratingText}>
-                                <Text style={styles.ratingValue}>{product.rating || '4.5'}</Text><Text style={styles.brandSeparator}> • </Text><Text style={styles.reviewText}>{product.reviews || '345'} Verified Reviews</Text>
+                                <Text style={styles.ratingValue}>{`${product.rating || '4.5'}`}</Text><Text style={styles.brandSeparator}>{` • `}</Text><Text style={styles.reviewText}>{`${product.reviews || '345'} Verified Reviews`}</Text>
                             </View>
                         </View>
 

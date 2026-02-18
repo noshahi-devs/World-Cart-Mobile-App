@@ -10,6 +10,7 @@ import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
 import AppNavigator from './navigation/AppNavigator';
 import SplashScreen from './screens/SplashScreen';
+import HappinessEffects from './components/HappinessEffects';
 
 export default function App() {
     const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +39,7 @@ export default function App() {
                                 <AppNavigator />
                                 <StatusBar style="dark" backgroundColor="#FFFFFF" />
                             </NavigationContainer>
+                            <HappinessEffects />
                         </CartProvider>
                     </WishlistProvider>
                 </AuthProvider>
