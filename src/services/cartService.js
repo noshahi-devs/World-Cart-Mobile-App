@@ -10,11 +10,6 @@ export const cartService = {
         let storeProductId = null;
 
         try {
-            // BACKEND ALIGNMENT PROBE:
-            // The API strictly requires storeProductId.
-            console.log('=== CART SERVICE PROBE ===');
-            console.log('Product Keys:', Object.keys(product));
-
             // Priority:
             // 1. Explicit storeProductId (assigned in ProductDetail from nav params or API)
             // 2. product.store?.storeProductId
@@ -32,8 +27,6 @@ export const cartService = {
                 storeProductId = product.id;
             }
 
-            console.log('Selected storeProductId for AddToCart:', storeProductId);
-
             if (!storeProductId) {
                 console.error('CartService: No valid storeProductId found for product:', product);
                 throw new Error('Store product ID not found. Please try again.');
@@ -47,10 +40,7 @@ export const cartService = {
                 quantity: quantity
             };
 
-            console.log('CartService - Sending AddToCart payload:', JSON.stringify(payload, null, 2));
-
             const response = await apiClient.post('/api/services/app/Cart/AddToCart', payload);
-            console.log('CartService - AddToCart Success:', response.data);
             return response.data;
         } catch (error) {
             console.error('CartService - AddToCart ERROR:', {
@@ -68,9 +58,11 @@ export const cartService = {
      * Get all cart items
      * GET /api/services/app/Cart/GetCartItems
      */
-    getCartItems: async () => {
+    getCartItems: async (userId = 0) => {
         try {
-            const response = await apiClient.get('/api/services/app/Cart/GetCartItems');
+            const response = await apiClient.get('/api/services/app/Cart/GetCartItems', {
+                params: { userId }
+            });
             const data = response.data;
 
             // Handle different response formats

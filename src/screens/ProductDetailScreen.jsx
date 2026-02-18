@@ -74,14 +74,6 @@ const ProductDetailScreen = ({ route, navigation }) => {
                     data.storeProductId = navStoreProductId;
                 }
 
-                console.log('=== PRODUCT DETAIL DIAGNOSTICS ===');
-                console.log('Template ProductId:', data.productId);
-                console.log('Preserved StoreProductId:', data.storeProductId);
-                if (data.store) {
-                    console.log('Store Object Keys:', Object.keys(data.store));
-                    console.log('Store Link ID (storeProductId):', data.store.storeProductId);
-                }
-
                 setProduct(data);
 
                 if (data?.sizeOptions?.length > 0) setSelectedSize(data.sizeOptions[0]);
@@ -314,7 +306,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                         {/* Brand & Stock Header */}
                         <View style={styles.headerRow}>
                             <View style={styles.brandLine}>
-                                <Text style={styles.brandName}>{`${product.brandName ? product.brandName : 'Unknown Brand'}` + ` • `}</Text>
+                                <Text style={styles.brandName}>{`${product.brandName || 'Unknown Brand'} • `}</Text>
                                 <Text style={styles.soldByText}>{`Sold by ${product.store?.storeName || 'Merchant'}`}</Text>
                             </View>
                             <View style={[styles.stockIndicator, { backgroundColor: (stockQuantity > 0) ? COLORS.success + '15' : COLORS.error + '15' }]}>
@@ -344,7 +336,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                             <Star3D size={20} color="#FFD700" focused />
                             <View style={styles.ratingText}>
                                 <Text style={styles.ratingValue}>
-                                    {`${product.rating || '4.5'}` + ` • `}
+                                    {`${product.rating || '4.5'} • `}
                                     <Text style={styles.reviewText}>{`${product.reviews || '345'} Verified Reviews`}</Text>
                                 </Text>
                             </View>

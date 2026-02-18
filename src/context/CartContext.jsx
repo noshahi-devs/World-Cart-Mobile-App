@@ -26,7 +26,7 @@ export const CartProvider = ({ children }) => {
         }
         try {
             setIsLoading(true);
-            const items = await cartService.getCartItems();
+            const items = await cartService.getCartItems(user.id);
             // Map backend response to frontend format
             const mappedItems = items.map(item => ({
                 id: item.storeProductId,
