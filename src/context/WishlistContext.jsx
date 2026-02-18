@@ -1,13 +1,53 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from './AuthContext';
 
 const WishlistContext = createContext();
 
 export const WishlistProvider = ({ children }) => {
     const [wishlistItems, setWishlistItems] = useState([]);
+    const { user } = useAuth();
 
     // Animation Refs
     const heartsRef = React.useRef(null);
     const toastRef = React.useRef(null);
+
+    // 📥 Load Wishlist on Start
+    useEffect(() => {
+        const loadWishlist = async () => {
+            try {
+                const savedWishlist = await AsyncStorage.getItem('user_wishlist');
+                if (savedWishlist) {
+                    setWishlistItems(JSON.parse(savedWishlist));
+                }
+            } catch (error) {
+                console.error('Wishlist Context: Failed to load wishlist from storage', error);
+            }
+        };
+        loadWishlist();
+    }, []);
+
+    // 💾 Save Wishlist whenever it changes
+    useEffect(() => {
+        const saveWishlist = async () => {
+            try {
+                await AsyncStorage.setItem('user_wishlist', JSON.stringify(wishlistItems));
+            } catch (error) {
+                console.error('Wishlist Context: Failed to save wishlist', error);
+            }
+        };
+        if (wishlistItems.length >= 0) {
+            saveWishlist();
+        }
+    }, [wishlistItems]);
+
+    // 🧹 Clear Wishlist on Logout (as requested)
+    useEffect(() => {
+        if (!user) {
+            setWishlistItems([]);
+            AsyncStorage.removeItem('user_wishlist');
+        }
+    }, [user]);
 
     // Toggle: agar product already wishlist mein hai to remove, warna add
     const toggleWishlist = (product) => {
