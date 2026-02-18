@@ -28,8 +28,8 @@ import { resolveImagePath } from '../utils/imagePathHelper';
 const { width } = Dimensions.get('window');
 
 const ProductDetailScreen = ({ route, navigation }) => {
-    // FIXED: Safely get productId with fallback
-    const { productId } = route.params || {};
+    // Receive both template productId and the specific storeProductId
+    const { productId, storeProductId: navStoreProductId } = route.params || {};
     const { addToCart } = useCart();
     const { toggleWishlist, isWishlisted } = useWishlist();
     const { user } = useAuth();
@@ -68,18 +68,25 @@ const ProductDetailScreen = ({ route, navigation }) => {
             const data = await catalogService.getProductDetail(productId);
 
             if (data) {
-                console.log('=== PRODUCT DETAIL RESPONSE KEYS ===');
-                console.log(Object.keys(data));
-                console.log('Main Store ID:', data.store?.storeId);
-                if (data.otherStores?.length > 0) {
-                    console.log('First Other Store Keys:', Object.keys(data.otherStores[0]));
+                // IMPORTANT: navStoreProductId is usually the correct ID from the list view (Join ID)
+                // We must preserve it even if the detail API doesn't return it
+                if (navStoreProductId) {
+                    data.storeProductId = navStoreProductId;
                 }
+
+                console.log('=== PRODUCT DETAIL DIAGNOSTICS ===');
+                console.log('Template ProductId:', data.productId);
+                console.log('Preserved StoreProductId:', data.storeProductId);
+                if (data.store) {
+                    console.log('Store Object Keys:', Object.keys(data.store));
+                    console.log('Store Link ID (storeProductId):', data.store.storeProductId);
+                }
+
+                setProduct(data);
+
+                if (data?.sizeOptions?.length > 0) setSelectedSize(data.sizeOptions[0]);
+                if (data?.colorOptions?.length > 0) setSelectedColor(data.colorOptions[0]);
             }
-
-            setProduct(data);
-
-            if (data?.sizeOptions?.length > 0) setSelectedSize(data.sizeOptions[0]);
-            if (data?.colorOptions?.length > 0) setSelectedColor(data.colorOptions[0]);
         } catch (error) {
             console.error('Fetch detail error:', error);
             setError(error.message || 'Failed to load product details');
@@ -307,7 +314,8 @@ const ProductDetailScreen = ({ route, navigation }) => {
                         {/* Brand & Stock Header */}
                         <View style={styles.headerRow}>
                             <View style={styles.brandLine}>
-                                <Text style={styles.brandName}>{`${product.brandName ? product.brandName : 'Unknown Brand'}`}</Text><Text style={styles.brandSeparator}>{` • `}</Text><Text style={styles.soldByText}>{`Sold by ${product.store?.storeName || 'Merchant'}`}</Text>
+                                <Text style={styles.brandName}>{`${product.brandName ? product.brandName : 'Unknown Brand'}` + ` • `}</Text>
+                                <Text style={styles.soldByText}>{`Sold by ${product.store?.storeName || 'Merchant'}`}</Text>
                             </View>
                             <View style={[styles.stockIndicator, { backgroundColor: (stockQuantity > 0) ? COLORS.success + '15' : COLORS.error + '15' }]}>
                                 <Text style={[styles.stockText, { color: (stockQuantity > 0) ? COLORS.success : COLORS.error }]}>
@@ -333,11 +341,12 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
                         {/* Rating with 3D stars */}
                         <View style={styles.ratingContainer}>
-                            <View>
-                                <Star3D size={20} color="#FFD700" focused />
-                            </View>
+                            <Star3D size={20} color="#FFD700" focused />
                             <View style={styles.ratingText}>
-                                <Text style={styles.ratingValue}>{`${product.rating || '4.5'}`}</Text><Text style={styles.brandSeparator}>{` • `}</Text><Text style={styles.reviewText}>{`${product.reviews || '345'} Verified Reviews`}</Text>
+                                <Text style={styles.ratingValue}>
+                                    {`${product.rating || '4.5'}` + ` • `}
+                                    <Text style={styles.reviewText}>{`${product.reviews || '345'} Verified Reviews`}</Text>
+                                </Text>
                             </View>
                         </View>
 
@@ -786,16 +795,20 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: COLORS.gray[200],
         ...SHADOWS.light,
+        shadowColor: COLORS.black,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 4,
     },
     selectedSizeInner: {
-        backgroundColor: COLORS.black,
-        borderColor: COLORS.black,
-        ...SHADOWS.button3D,
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
     },
     sizeText: {
         fontSize: 16,
-        fontWeight: '600',
-        color: COLORS.gray[700],
+        fontWeight: 'bold',
+        color: COLORS.gray[800],
     },
     selectedSizeText: {
         color: COLORS.white,
@@ -807,22 +820,25 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 6,
         alignSelf: 'flex-start',
-        ...SHADOWS.medium,
+        borderWidth: 1.5,
+        borderColor: COLORS.gray[200],
     },
     quantityButton3D: {
-        width: 44,
-        height: 44,
+        width: 40,
+        height: 40,
         borderRadius: 12,
         backgroundColor: COLORS.white,
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: COLORS.gray[200],
         ...SHADOWS.light,
     },
     quantityDisplay: {
-        paddingHorizontal: 24,
+        paddingHorizontal: 16,
     },
     quantityText: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
         color: COLORS.black,
     },
@@ -831,47 +847,58 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: SIZES.padding,
         backgroundColor: COLORS.white,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        ...SHADOWS.floating,
+        flexDirection: 'row',
+        paddingHorizontal: SIZES.padding,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.gray[200],
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -10 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 20,
     },
     priceSummary: {
         flex: 1,
-        marginRight: SIZES.padding,
     },
     totalPrice: {
-        fontSize: 26,
+        fontSize: 24,
         fontWeight: 'bold',
         color: COLORS.black,
     },
     addToCartButton: {
-        flex: 2,
+        flex: 1.8,
     },
-    otherStoreCard: {
-        marginBottom: 10,
-        padding: 10,
-        backgroundColor: COLORS.gray[100],
+    resellerInfo: {
+        marginTop: 4,
+        padding: 8,
+        backgroundColor: COLORS.primary + '08',
         borderRadius: 8,
     },
+    otherStoreCard: {
+        backgroundColor: COLORS.white,
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: COLORS.gray[200],
+    },
     otherStoreName: {
-        fontWeight: 'bold',
         fontSize: 14,
+        fontWeight: 'bold',
         color: COLORS.black,
+        marginBottom: 4,
     },
     otherStorePrice: {
         fontSize: 13,
         color: COLORS.gray[700],
     },
     otherStoreStock: {
-        fontSize: 13,
-        color: COLORS.gray[700],
-    },
-    resellerInfo: {
-        marginTop: 8,
+        fontSize: 12,
+        color: COLORS.gray[500],
+        marginTop: 2,
     },
 });
 

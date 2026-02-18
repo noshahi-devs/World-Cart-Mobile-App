@@ -73,7 +73,10 @@ const ProductListScreen = ({ route, navigation }) => {
                     // Prioritize productId, fallback to id, but check for empty GUID
                     const targetId = item.productId || item.id;
                     if (targetId && targetId !== '00000000-0000-0000-0000-000000000000') {
-                        navigation.navigate('ProductDetail', { productId: targetId });
+                        navigation.navigate('ProductDetail', {
+                            productId: targetId,
+                            storeProductId: item.storeProductId || item.id // Favor explicit storeProductId, fallback to id
+                        });
                     } else {
                         console.warn('Invalid product ID:', item);
                     }

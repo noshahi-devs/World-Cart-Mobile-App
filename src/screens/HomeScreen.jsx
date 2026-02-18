@@ -137,7 +137,10 @@ const HomeScreen = ({ navigation }) => {
         }
 
         if (targetId) {
-            navigation.navigate('ProductDetail', { productId: targetId });
+            navigation.navigate('ProductDetail', {
+                productId: targetId,
+                storeProductId: product.storeProductId || product.id // Favor explicit storeProductId, fallback to id
+            });
         } else {
             console.warn('Home: Invalid product ID pressed:', product);
         }

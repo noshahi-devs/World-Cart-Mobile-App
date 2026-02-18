@@ -54,40 +54,42 @@ export const CartProvider = ({ children }) => {
 
     const addToCart = async (product, quantity = 1, size = null, color = null) => {
         try {
-            // Robust ID selection check
-            const emptyGuid = '00000000-0000-0000-0000-000000000000';
-            const targetId = product.productId || product.id || product.storeProductId;
-
-            if (!targetId || targetId === emptyGuid) {
-                console.error('CartContext: No valid ID for product:', product);
-                throw new Error('Invalid product ID');
-            }
-
             // Sync with backend: pass full product so service can select best ID
+            // cartService will prioritize storeProductId but needs the user ID
             await cartService.addToCart(product, quantity, user?.id || 0);
 
-            // Update local state
+            // Update local state - use storeProductId as the primary 'id' for consistency with fetchCartFromBackend
+            const storeProductId = product.storeProductId || product.store?.storeProductId || product.id;
+
             setCartItems(prevCart => {
                 const existingItem = prevCart.find(item =>
-                    item.id === product.id &&
+                    item.id === storeProductId &&
                     item.size === size &&
                     item.color === color
                 );
 
                 if (existingItem) {
                     return prevCart.map(item =>
-                        (item.id === product.id && item.size === size && item.color === color)
+                        (item.id === storeProductId && item.size === size && item.color === color)
                             ? { ...item, quantity: item.quantity + quantity }
                             : item
                     );
                 }
-                return [...prevCart, { ...product, quantity, size, color }];
+
+                // For new items, ensure we store the storeProductId as 'id'
+                return [...prevCart, {
+                    ...product,
+                    id: storeProductId,
+                    quantity,
+                    size,
+                    color
+                }];
             });
 
-            // Refresh from backend to get accurate data
+            // Refresh from backend to get accurate data (like cartItemId)
             await fetchCartFromBackend();
         } catch (error) {
-            console.error('Failed to add to cart:', error);
+            console.error('CartContext: Failed to add to cart:', error);
             throw error;
         }
     };

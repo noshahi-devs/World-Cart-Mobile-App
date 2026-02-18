@@ -132,7 +132,8 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                 {/* Info Container */}
                 <View style={styles.infoContainer}>
                     <Text style={styles.brandLine} numberOfLines={1}>
-                        <Text style={styles.brandName}>{product.categoryName || product.brand || product.category || 'World'}</Text><Text style={styles.brandSeparator}>{` • `}</Text><Text style={styles.soldByText}>{`Sold by ${product.storeName || 'Merchant'}`}</Text>
+                        <Text style={styles.brandName}>{product.categoryName || product.brand || product.category || 'World'}</Text>
+                        <Text style={styles.soldByText}>{` • Sold by ${product.storeName || 'Merchant'}`}</Text>
                     </Text>
 
                     <Text style={styles.title} numberOfLines={2}>
@@ -153,7 +154,7 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                             <View style={styles.ratingContainer}>
                                 <Star3D size={12} color="#FFD700" focused />
                                 <Text style={styles.ratingText}>
-                                    {`${product.rating || '4.5'} • `}<Text style={styles.reviewText}>{product.reviews || 0} Reviews</Text>
+                                    {`${product.rating || '4.5'} • ${product.reviews || 0} Reviews`}
                                 </Text>
                             </View>
                         </View>

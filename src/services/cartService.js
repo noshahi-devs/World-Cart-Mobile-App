@@ -7,55 +7,58 @@ export const cartService = {
      */
     addToCart: async (product, quantity = 1, userId = 0) => {
         const emptyGuid = '00000000-0000-0000-0000-000000000000';
-        let selectedTargetId = null;
+        let storeProductId = null;
 
         try {
-            // Robust ID selection: prefer productId, fallback to id, then storeProductId, but avoid empty GUIDs
-            if (product.productId && product.productId !== emptyGuid) {
-                selectedTargetId = product.productId;
-            } else if (product.id && product.id !== emptyGuid) {
-                selectedTargetId = product.id;
-            } else if (product.storeProductId && product.storeProductId !== emptyGuid) {
-                selectedTargetId = product.storeProductId;
+            // BACKEND ALIGNMENT PROBE:
+            // The API strictly requires storeProductId.
+            console.log('=== CART SERVICE PROBE ===');
+            console.log('Product Keys:', Object.keys(product));
+
+            // Priority:
+            // 1. Explicit storeProductId (assigned in ProductDetail from nav params or API)
+            // 2. product.store?.storeProductId
+            // 3. product.id (This is the storeProductId in Product List/Home views)
+
+            if (product.storeProductId && product.storeProductId !== emptyGuid) {
+                storeProductId = product.storeProductId;
+            } else if (product.store?.storeProductId && product.store.storeProductId !== emptyGuid) {
+                storeProductId = product.store.storeProductId;
+            } else if (product.id && product.id !== emptyGuid && product.id !== product.productId) {
+                // If id is present and different from productId, it's likely the store-product link ID
+                storeProductId = product.id;
+            } else if (product.id && product.id !== emptyGuid && !product.productId) {
+                // Only id present
+                storeProductId = product.id;
             }
 
-            if (!selectedTargetId) {
-                console.error('CartService: No valid ID found for product:', product);
-                throw new Error('Invalid product ID');
+            console.log('Selected storeProductId for AddToCart:', storeProductId);
+
+            if (!storeProductId) {
+                console.error('CartService: No valid storeProductId found for product:', product);
+                throw new Error('Store product ID not found. Please try again.');
             }
 
-            // Robust payload: try both productId and storeProductId keys
+            // Strictly follow the payload format requested by the backend:
+            // { userId, storeProductId, quantity }
             const payload = {
-                productId: selectedTargetId,
-                storeProductId: selectedTargetId,
+                userId: typeof userId === 'number' ? userId : 0,
+                storeProductId: storeProductId,
                 quantity: quantity
             };
 
-            // Add storeId if available
-            const storeId = product.store?.storeId || product.storeId;
-            if (storeId) {
-                payload.storeId = storeId;
-            }
-
-            console.log('CartService - Attempting AddToCart with payload:', JSON.stringify(payload, null, 2));
-
-            // Only send userId if it's a real value (non-zero)
-            if (userId && userId !== 0) {
-                payload.userId = userId;
-            }
+            console.log('CartService - Sending AddToCart payload:', JSON.stringify(payload, null, 2));
 
             const response = await apiClient.post('/api/services/app/Cart/AddToCart', payload);
             console.log('CartService - AddToCart Success:', response.data);
             return response.data;
         } catch (error) {
-            console.error('Error adding to cart:', {
-                message: error.message,
+            console.error('CartService - AddToCart ERROR:', {
+                errorMessage: error.message,
                 status: error.response?.status,
-                data: error.response?.data,
-                productTitle: product?.title,
-                selectedTargetId,
-                quantity,
-                userId
+                apiData: error.response?.data,
+                payloadSent: { storeProductId, quantity, userId },
+                productTitle: product?.title || product?.productTitle
             });
             throw error;
         }

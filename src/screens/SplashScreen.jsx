@@ -225,8 +225,8 @@ const styles = StyleSheet.create({
 
     cart: {
         position: 'absolute',
-        bottom: height * 0.25,
-        fontSize: 35,
+        bottom: height * 0.20,
+        fontSize: 40,
     },
 
     progressContainer: {
