@@ -531,21 +531,27 @@ const ProfileScreen = ({ navigation }) => {
                                     key={index}
                                     style={styles.setting3DCard}
                                     activeOpacity={0.9}
-                                    onPress={() => showModal({
-                                        title: item.modalTitle || item.label,
-                                        message: item.modalMsg,
-                                        type: 'info',
-                                        icon: item.isLogo ? (
-                                            <Image
-                                                source={require('../assets/icons/World-Cart.png')}
-                                                style={{ width: 80, height: 80, borderRadius: 40 }}
-                                                resizeMode="cover"
-                                            />
-                                        ) : (
-                                            <item.icon size={32} color={item.color} strokeWidth={2.5} />
-                                        ),
-                                        primaryButton: { text: "Got it", onPress: () => hideModal() }
-                                    })}
+                                    onPress={() => {
+                                        if (item.label === 'Change Password') {
+                                            navigation.getParent()?.navigate('ChangePassword');
+                                        } else {
+                                            showModal({
+                                                title: item.modalTitle || item.label,
+                                                message: item.modalMsg,
+                                                type: 'info',
+                                                icon: item.isLogo ? (
+                                                    <Image
+                                                        source={require('../assets/icons/World-Cart.png')}
+                                                        style={{ width: 80, height: 80, borderRadius: 40 }}
+                                                        resizeMode="cover"
+                                                    />
+                                                ) : (
+                                                    <item.icon size={32} color={item.color} strokeWidth={2.5} />
+                                                ),
+                                                primaryButton: { text: "Got it", onPress: () => hideModal() }
+                                            });
+                                        }
+                                    }}
                                 >
                                     <View style={[
                                         styles.settingIconContainer,

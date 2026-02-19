@@ -120,7 +120,7 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                         )}
                     </TouchableOpacity>
 
-                    {(product.discount || product.resellerDiscountPercentage) && (
+                    {!!(product.resellerDiscountPercentage || product.discount) && (
                         <View style={styles.discountBadge}>
                             <Text style={styles.discountText}>
                                 -{product.resellerDiscountPercentage || product.discount}%

@@ -9,17 +9,18 @@ import {
     StatusBar,
     Easing,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient as SvgGradient, Stop, Rect } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
 const SplashScreen = ({ onFinish }) => {
+    const insets = useSafeAreaInsets();
     // Animation Values
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.85)).current;
     const floatAnim = useRef(new Animated.Value(0)).current;
     const progressAnim = useRef(new Animated.Value(0)).current;
-    const cartBounce = useRef(new Animated.Value(0)).current;
 
     const [percentage, setPercentage] = useState(0);
 
@@ -58,24 +59,6 @@ const SplashScreen = ({ onFinish }) => {
             ])
         ).start();
 
-        // ===== CART BOUNCE =====
-        Animated.loop(
-            Animated.sequence([
-                Animated.spring(cartBounce, {
-                    toValue: -8,
-                    friction: 4,
-                    tension: 80,
-                    useNativeDriver: true,
-                }),
-                Animated.spring(cartBounce, {
-                    toValue: 0,
-                    friction: 4,
-                    tension: 80,
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-
         // ===== PROGRESS =====
         progressAnim.addListener(({ value }) => {
             setPercentage(Math.floor(value * 100));
@@ -103,6 +86,11 @@ const SplashScreen = ({ onFinish }) => {
     const progressWidth = progressAnim.interpolate({
         inputRange: [0, 1],
         outputRange: ['0%', '100%'],
+    });
+
+    const cartMoveX = progressAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-(width * 0.4), (width * 0.4)],
     });
 
     return (
@@ -149,7 +137,22 @@ const SplashScreen = ({ onFinish }) => {
             </Animated.View>
 
             {/* CART ICON */}
-            <Animated.View style={[styles.cart, { transform: [{ translateY: cartBounce }] }]}>
+            <Animated.View
+                style={[
+                    styles.cart,
+                    {
+                        transform: [
+                            { translateX: cartMoveX },
+                            {
+                                rotate: progressAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: ['0deg', '8deg']
+                                })
+                            }
+                        ]
+                    }
+                ]}
+            >
                 <Text style={{ fontSize: 35 }}>🛒</Text>
             </Animated.View>
 
@@ -162,7 +165,7 @@ const SplashScreen = ({ onFinish }) => {
                 <Text style={styles.loadingText}>PREPARING YOUR EXPERIENCE</Text>
             </View>
 
-            <Text style={styles.copyright}>© 2026 WORLD-CART</Text>
+            <Text style={[styles.copyright, { bottom: Math.max(20, insets.bottom + 10) }]}>© 2026 WORLD-CART</Text>
         </View>
     );
 };
@@ -225,8 +228,8 @@ const styles = StyleSheet.create({
 
     cart: {
         position: 'absolute',
-        bottom: height * 0.20,
-        fontSize: 40,
+        bottom: 115, // Positioned right above the progress bar
+        zIndex: 10,
     },
 
     progressContainer: {

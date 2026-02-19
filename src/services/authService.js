@@ -120,6 +120,47 @@ const authService = {
         }
     },
 
+    // Get Detailed User Info
+    // Endpoint: /api/services/app/User/Get
+    getUserDetails: async (id) => {
+        try {
+            const response = await apiClient.get('/api/services/app/User/Get', {
+                params: { id }
+            });
+            return response.data.result;
+        } catch (error) {
+            // Log cleaned up: only throw the error, let context handle specific logging/fallback
+            throw error;
+        }
+    },
+
+    // Update User Profile
+    // Endpoint: /api/services/app/User/Update
+    updateUser: async (userData) => {
+        try {
+            const response = await apiClient.put('/api/services/app/User/Update', userData);
+            return response.data.result;
+        } catch (error) {
+            console.error('Update User Error:', error);
+            throw error.response?.data?.error || { message: 'Failed to update profile on server.' };
+        }
+    },
+
+    // Change Password
+    // Endpoint: /api/services/app/User/ChangePassword
+    changePassword: async (currentPassword, newPassword) => {
+        try {
+            const response = await apiClient.post('/api/services/app/User/ChangePassword', {
+                currentPassword,
+                newPassword
+            });
+            return response.data; // Usually returns { success: true } or true
+        } catch (error) {
+            console.error('Change Password Error:', error);
+            throw error.response?.data?.error || { message: 'Failed to change password.' };
+        }
+    },
+
     // Logout
     logout: async () => {
         try {

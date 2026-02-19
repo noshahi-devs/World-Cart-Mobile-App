@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import cartService from '../services/cartService';
+import { resolveImagePath } from '../utils/imagePathHelper';
 
 const CartContext = createContext();
 
@@ -52,6 +53,10 @@ export const CartProvider = ({ children }) => {
     // Wishlist is now managed by backend API
     // Removed toggleWishlist function
 
+    // Animation Refs
+    const cartHeartsRef = React.useRef(null);
+    const cartToastRef = React.useRef(null);
+
     const addToCart = async (product, quantity = 1, size = null, color = null) => {
         try {
             // Sync with backend: pass full product so service can select best ID
@@ -85,6 +90,11 @@ export const CartProvider = ({ children }) => {
                     color
                 }];
             });
+
+            // Trigger animations
+            const productImage = resolveImagePath(product.image1 || product.image || product.imageUrl);
+            cartHeartsRef.current?.trigger(productImage);
+            cartToastRef.current?.show(`${product.title || product.name || 'Product'}`);
 
             // Refresh from backend to get accurate data (like cartItemId)
             await fetchCartFromBackend();
@@ -178,7 +188,9 @@ export const CartProvider = ({ children }) => {
             clearCart,
             getCartTotal,
             getCartItemCount,
-            refreshCart: fetchCartFromBackend
+            refreshCart: fetchCartFromBackend,
+            cartHeartsRef,
+            cartToastRef
         }}>
             {children}
         </CartContext.Provider>

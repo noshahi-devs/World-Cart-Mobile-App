@@ -28,7 +28,12 @@ const EditProfileScreen = ({ navigation }) => {
 
     // Helper to get first/last name if they are missing but fullName exists
     const getInitialNames = () => {
-        if (user?.firstName) return { first: user.firstName, last: user.lastName || '' };
+        // Handle name/surname (from ABP API) or firstName/lastName
+        const first = user?.firstName || user?.name || '';
+        const last = user?.lastName || user?.surname || '';
+
+        if (first) return { first, last };
+
         if (user?.fullName) {
             const parts = user.fullName.split(' ');
             return {
@@ -43,10 +48,22 @@ const EditProfileScreen = ({ navigation }) => {
     const [firstName, setFirstName] = useState(initialNames.first);
     const [lastName, setLastName] = useState(initialNames.last);
     const [email, setEmail] = useState(user?.emailAddress || user?.email || '');
-    const [phone, setPhone] = useState(user?.phone || '');
+    const [phone, setPhone] = useState(user?.phoneNumber || user?.phone || '');
     const [country, setCountry] = useState(user?.country || '');
     const [profileImage, setProfileImage] = useState(user?.profileImage || null);
     const [loading, setLoading] = useState(false);
+
+    // Sync fields when user object updates from backend
+    React.useEffect(() => {
+        if (user) {
+            const names = getInitialNames();
+            setFirstName(names.first);
+            setLastName(names.last);
+            setEmail(user.emailAddress || user.email || '');
+            setPhone(user.phoneNumber || user.phone || '');
+            setCountry(user.country || '');
+        }
+    }, [user]);
 
     // Modal State
     const [modalConfig, setModalConfig] = useState({

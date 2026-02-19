@@ -43,13 +43,13 @@ export default function App() {
                         </CartProvider>
                     </WishlistProvider>
                 </AuthProvider>
-            </SafeAreaProvider>
 
-            {isLoading && (
-                <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]}>
-                    <SplashScreen onFinish={() => setIsLoading(false)} />
-                </View>
-            )}
+                {isLoading && (
+                    <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]}>
+                        <SplashScreen onFinish={() => setIsLoading(false)} />
+                    </View>
+                )}
+            </SafeAreaProvider>
         </View>
     );
 }

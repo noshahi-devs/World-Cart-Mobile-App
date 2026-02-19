@@ -74,7 +74,7 @@ const Header = ({ title, leftIcon, rightIcon, onLeftPress, onRightPress, badge }
                             return IconComponent ? <IconComponent size={iconSize} color={iconColor} /> : null;
                         })()}
                     </View>
-                    {badge && (
+                    {!!badge && (
                         <View style={styles.badge}>
                             <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
                         </View>

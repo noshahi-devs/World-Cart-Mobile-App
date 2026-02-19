@@ -35,15 +35,39 @@ export const AuthProvider = ({ children }) => {
 
     const fetchFullProfile = async () => {
         try {
-            const profile = await authService.getUserProfile();
-            if (profile && profile.user) {
-                const fullUserData = {
-                    ...profile.user,
-                    tenantId: profile.tenant?.id,
-                    tenancyName: profile.tenant?.tenancyName
-                };
-                setUser(fullUserData);
-                await AsyncStorage.setItem('userData', JSON.stringify(fullUserData));
+            // Step 1: Get basic session info (gives us the userId)
+            const session = await authService.getUserProfile();
+
+            if (session && session.user) {
+                try {
+                    // Step 2: Get detailed user record using the ID from session
+                    // Note: This endpoint (/api/services/app/User/Get) often requires Admin permissions
+                    const detailedUser = await authService.getUserDetails(session.user.id);
+
+                    if (detailedUser) {
+                        const fullUserData = {
+                            ...session.user,      // Session data (tenant info, etc)
+                            ...detailedUser,     // Detailed data (name, surname, etc)
+                            id: session.user.id, // Ensure ID is preserved
+                        };
+
+                        setUser(fullUserData);
+                        await AsyncStorage.setItem('userData', JSON.stringify(fullUserData));
+                    }
+                } catch (userGetError) {
+                    if (userGetError.response?.status === 403) {
+                        console.log('User/Get is restricted (403). Using session info only.');
+                        // If we can't get detailed info, just use the session info we already have
+                        const basicUserData = {
+                            ...session.user,
+                            id: session.user.id,
+                        };
+                        setUser(basicUserData);
+                        await AsyncStorage.setItem('userData', JSON.stringify(basicUserData));
+                    } else {
+                        throw userGetError;
+                    }
+                }
             }
         } catch (error) {
             console.error('Background profile fetch failed:', error);
@@ -134,24 +158,50 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 📝 UPDATE PROFILE (LOCAL ONLY AS REQUESTED)
+    // 📝 UPDATE PROFILE (NOW CALLS BACKEND)
     const updateProfile = async (profileData) => {
         try {
-            const updatedUser = {
-                ...user,
-                ...profileData,
-                // Automatically update fullName if names exist
-                fullName: profileData.firstName && profileData.lastName
-                    ? `${profileData.firstName} ${profileData.lastName}`
-                    : user?.fullName
+            // Map our local fields back to what User/Update expects
+            const updatePayload = {
+                ...user, // Keep existing fields (id, roleNames, etc)
+                name: profileData.firstName || user?.name || '',
+                surname: profileData.lastName || user?.surname || '',
+                emailAddress: profileData.email || user?.emailAddress || '',
+                userName: user?.userName || profileData.email, // userName is usually same as email
+                isActive: true
             };
 
-            setUser(updatedUser);
-            await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+            const updatedUserDetails = await authService.updateUser(updatePayload);
+
+            if (updatedUserDetails) {
+                const finalUser = {
+                    ...user,
+                    ...updatedUserDetails,
+                    // Re-calculate fullName for display
+                    fullName: `${updatedUserDetails.name} ${updatedUserDetails.surname}`
+                };
+
+                setUser(finalUser);
+                await AsyncStorage.setItem('userData', JSON.stringify(finalUser));
+                return { success: true };
+            }
+            return { success: false, message: 'Update failed' };
+        } catch (error) {
+            console.error('Failed to update profile on server:', error);
+            return {
+                success: false,
+                message: error.message || 'Failed to save changes to server.'
+            };
+        }
+    };
+
+    // 🔑 CHANGE PASSWORD
+    const changePassword = async (currentPassword, newPassword) => {
+        try {
+            await authService.changePassword(currentPassword, newPassword);
             return { success: true };
         } catch (error) {
-            console.error('Failed to update profile locally:', error);
-            return { success: false, message: 'Failed to save changes.' };
+            return { success: false, message: error.message };
         }
     };
 
@@ -163,7 +213,8 @@ export const AuthProvider = ({ children }) => {
         forgotPassword,
         resetPassword,
         logout,
-        updateProfile
+        updateProfile,
+        changePassword
     };
 
     return (

@@ -21,6 +21,7 @@ import VerificationScreen from '../screens/VerificationScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import { COLORS } from '../constants/theme';
 import {
     HomeOutline,
@@ -104,6 +105,7 @@ const AppNavigator = () => {
                     <Stack.Screen name="AllCategories" component={AllCategoriesScreen} />
                     <Stack.Screen name="ProductList" component={ProductListScreen} />
                     <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+                    <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
 
                     {/* Auth Screens */}
                     <Stack.Group screenOptions={{ presentation: 'modal', animation: 'slide_from_bottom' }}>
