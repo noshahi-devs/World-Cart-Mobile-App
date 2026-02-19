@@ -329,11 +329,11 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
                         <View style={styles.priceContainer}>
                             <Text style={styles.price}>
-                                <Text>{`$${currentPrice.toFixed(2)}`}</Text>
+                                <Text>{`$${Number(currentPrice || 0).toFixed(2)}`}</Text>
                             </Text>
                             {!!originalPrice && (
                                 <Text style={styles.oldPrice}>
-                                    <Text>{`$${originalPrice.toFixed(2)}`}</Text>
+                                    <Text>{`$${Number(originalPrice || 0).toFixed(2)}`}</Text>
                                 </Text>
                             )}
                             {!!discount && (
@@ -493,7 +493,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
             <View style={[styles.bottomBar, { paddingBottom: (insets.bottom >= 35 ? 16 : insets.bottom + 16) }]}>
                 <View style={styles.priceSummary}>
-                    <Text style={styles.totalPrice}>${(currentPrice * parseInt(quantity)).toFixed(2)}</Text>
+                    <Text style={styles.totalPrice}>${(Number(currentPrice || 0) * Number(quantity || 1)).toFixed(2)}</Text>
                 </View>
                 <Button
                     title={stockQuantity > 0 ? "Add to Cart" : "Out of Stock"}

@@ -171,7 +171,7 @@ const ProfileScreen = ({ navigation }) => {
                         </View>
                         <View style={styles.orderDetails}>
                             <Text style={styles.orderItems}>{order.items} items</Text>
-                            <Text style={styles.orderTotal}>${order.total.toFixed(2)}</Text>
+                            <Text style={styles.orderTotal}>${Number(order.total || 0).toFixed(2)}</Text>
                         </View>
                         <View style={styles.orderFooter}>
                             <View style={[

@@ -158,13 +158,13 @@ const OrderTrackingScreen = () => {
                         <Text style={styles.stepDesc}>No items found in this order.</Text>
                     )}
 
-                    {total && (
+                    {!!total && (
                         <>
                             <View style={styles.divider} />
                             <View style={[styles.itemRow, { marginTop: 8 }]}>
                                 <Text style={[styles.itemTitle, { flex: 1 }]}>Total Amount Paid</Text>
                                 <Text style={[styles.itemTotal, { color: COLORS.primary, fontSize: 18 }]}>
-                                    ${total.toFixed(2)}
+                                    ${Number(total || 0).toFixed(2)}
                                 </Text>
                             </View>
                         </>

@@ -243,7 +243,7 @@ const CartScreen = ({ navigation }) => {
                         )}
                     </View>
                     <Text style={styles.cartItemPrice}>
-                        {`$${(item.price * item.quantity).toFixed(2)}${item.quantity > 1 ? ` ($${item.price.toFixed(2)} each)` : ''}`}
+                        {`$${(Number(item.price || 0) * item.quantity).toFixed(2)}${item.quantity > 1 ? ` ($${Number(item.price || 0).toFixed(2)} each)` : ''}`}
                     </Text>
 
                     <View style={styles.cartItemActions}>
