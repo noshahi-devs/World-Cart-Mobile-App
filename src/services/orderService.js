@@ -53,6 +53,27 @@ const orderService = {
             console.error('OrderService - GetOrder ERROR:', error);
             throw error;
         }
+    },
+
+    /**
+     * Get all orders for the current logged-in user
+     * GET /api/services/app/Order/GetAll
+     */
+    getAllOrders: async ({ skipCount = 0, maxResultCount = 50, sorting = 'creationTime DESC' } = {}) => {
+        try {
+            const response = await apiClient.get('/api/services/app/Order/GetAll', {
+                params: { skipCount, maxResultCount, sorting }
+            });
+            // ABP standard response: { result: { items: [...], totalCount: N } }
+            const result = response.data?.result;
+            return {
+                items: result?.items || result || [],
+                totalCount: result?.totalCount || 0,
+            };
+        } catch (error) {
+            console.error('OrderService - GetAllOrders ERROR:', error?.response?.data || error.message);
+            throw error;
+        }
     }
 };
 

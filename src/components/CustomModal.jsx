@@ -24,6 +24,7 @@ const CustomModal = ({
     primaryButton,
     secondaryButton,
     icon,
+    iconColor, // NEW: passes item.color from ProfileScreen for matching premium look
 }) => {
     const scaleAnim = useRef(new Animated.Value(0)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -82,8 +83,23 @@ const CustomModal = ({
             case 'warning': return '#FF9800';
             case 'error': return '#F44336';
             case 'confirm': return COLORS.primary;
-            default: return COLORS.primary;
+            default: return iconColor || COLORS.primary; // Use passed iconColor for info type
         }
+    };
+
+    // For 'info' type: use a light tinted bg matching list icon style
+    const getIconCircleBg = () => {
+        if (type === 'info' && iconColor) {
+            return iconColor + '18'; // ~10% opacity tint — soft premium look
+        }
+        return getTypeColor();
+    };
+
+    const getIconCircleBorderColor = () => {
+        if (type === 'info' && iconColor) {
+            return iconColor + '35'; // slightly visible border
+        }
+        return '#fff';
     };
 
     const getTypeIcon = () => {
@@ -151,7 +167,13 @@ const CustomModal = ({
                                                 }
                                             ]}
                                         >
-                                            <View style={[styles.iconCircle, { backgroundColor: getTypeColor() }]}>
+                                            <View style={[
+                                                styles.iconCircle,
+                                                {
+                                                    backgroundColor: getIconCircleBg(),
+                                                    borderColor: getIconCircleBorderColor(),
+                                                }
+                                            ]}>
                                                 {icon || getTypeIcon()}
                                             </View>
                                         </Animated.View>

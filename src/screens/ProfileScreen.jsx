@@ -9,6 +9,7 @@ import {
     StyleSheet,
     TextInput,
     Animated,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PayPalIcon } from '../components/TabIcons';
@@ -30,7 +31,8 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Header from '../components/Header';
 import CustomModal from '../components/CustomModal';
-import { profileData, orders, addresses, paymentMethods } from '../constants/data.jsx';
+import { profileData, addresses, paymentMethods } from '../constants/data.jsx';
+import orderService from '../services/orderService';
 import { COLORS, SIZES } from '../constants/theme';
 import { moderateScale, rf, verticalScale } from '../utils/responsive';
 import { CreditCardIcon } from '../components/TabIcons';
@@ -142,6 +144,41 @@ const ProfileScreen = ({ navigation }) => {
 
     const [activeSection, setActiveSection] = useState('orders');
 
+    // --- Real Orders from API ---
+    const [userOrders, setUserOrders] = useState([]);
+    const [ordersLoading, setOrdersLoading] = useState(true);
+    const [ordersError, setOrdersError] = useState(null);
+    const emptyOrderAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (user) {
+            fetchUserOrders();
+        }
+    }, [user]);
+
+    const fetchUserOrders = async () => {
+        try {
+            setOrdersLoading(true);
+            setOrdersError(null);
+            const data = await orderService.getAllOrders({ maxResultCount: 50 });
+            setUserOrders(data.items || []);
+            // Trigger empty state animation if no orders
+            if ((data.items || []).length === 0) {
+                Animated.spring(emptyOrderAnim, {
+                    toValue: 1,
+                    tension: 60,
+                    friction: 7,
+                    useNativeDriver: true,
+                }).start();
+            }
+        } catch (err) {
+            console.error('ProfileScreen - fetchUserOrders:', err?.response?.data || err.message);
+            setOrdersError('Could not load orders. Please try again.');
+        } finally {
+            setOrdersLoading(false);
+        }
+    };
+
 
     // Animations for Guest View
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -221,44 +258,152 @@ const ProfileScreen = ({ navigation }) => {
         );
     }
 
-    const renderOrders = () => (
-        <View style={styles.sectionContent}>
-            {orders.map((order) => (
-                <View key={order.id} style={styles.orderCardWrapper}>
-                    <View style={styles.orderLayerBack} />
-                    <View style={styles.orderLayerMiddle} />
-                    <TouchableOpacity style={styles.orderCard}>
-                        <View style={styles.orderHeader}>
-                            <Text style={styles.orderId}>Order #{order.id}</Text>
-                            <Text style={styles.orderDate}>{order.date}</Text>
+    // Helper: format order date
+    const formatOrderDate = (dateStr) => {
+        if (!dateStr) return '';
+        try {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        } catch { return dateStr; }
+    };
+
+    // Helper: map API status string to style
+    const getStatusStyle = (status = '') => {
+        const s = status.toLowerCase();
+        if (s.includes('delivered') || s.includes('completed')) return styles.statusDelivered;
+        if (s.includes('shipped') || s.includes('transit')) return styles.statusShipped;
+        if (s.includes('processing') || s.includes('pending')) return styles.statusProcessing;
+        if (s.includes('cancel')) return styles.statusCancelled;
+        return {};
+    };
+
+    const renderOrders = () => {
+        // Loading skeleton
+        if (ordersLoading) {
+            return (
+                <View style={styles.sectionContent}>
+                    {[1, 2, 3].map((i) => (
+                        <View key={i} style={styles.orderSkeletonCard}>
+                            <View style={styles.skeletonLine} />
+                            <View style={[styles.skeletonLine, { width: '60%', marginTop: 8 }]} />
+                            <View style={[styles.skeletonLine, { width: '40%', marginTop: 8 }]} />
                         </View>
-                        <View style={styles.orderDetails}>
-                            <Text style={styles.orderItems}>{order.items} items</Text>
-                            <Text style={styles.orderTotal}>${Number(order.total || 0).toFixed(2)}</Text>
-                        </View>
-                        <View style={styles.orderFooter}>
-                            <View style={[
-                                styles.orderStatus,
-                                order.status === 'Delivered' && styles.statusDelivered,
-                                order.status === 'Shipped' && styles.statusShipped,
-                                order.status === 'Processing' && styles.statusProcessing
-                            ]}>
-                                <Text style={styles.orderStatusText}>{order.status}</Text>
-                            </View>
-                            {order.tracking && (
-                                <TouchableOpacity
-                                    style={styles.trackButton}
-                                    onPress={() => navigation.navigate('OrderTracking', { orderId: `#WC${order.id}` })}
-                                >
-                                    <Text style={styles.trackButtonText}>Track</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
+                    ))}
+                </View>
+            );
+        }
+
+        // Error state
+        if (ordersError) {
+            return (
+                <View style={styles.emptyOrdersContainer}>
+                    <Text style={styles.emptyOrdersEmoji}>⚠️</Text>
+                    <Text style={styles.emptyOrdersTitle}>Oops!</Text>
+                    <Text style={styles.emptyOrdersSubtitle}>{ordersError}</Text>
+                    <TouchableOpacity style={styles.retryButton} onPress={fetchUserOrders}>
+                        <Text style={styles.retryButtonText}>Try Again</Text>
                     </TouchableOpacity>
                 </View>
-            ))}
-        </View>
-    );
+            );
+        }
+
+        // Empty state — animated
+        if (userOrders.length === 0) {
+            return (
+                <Animated.View
+                    style={[
+                        styles.emptyOrdersContainer,
+                        {
+                            opacity: emptyOrderAnim,
+                            transform: [{
+                                translateY: emptyOrderAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [30, 0],
+                                })
+                            }]
+                        }
+                    ]}
+                >
+                    <View style={styles.emptyOrderIconBg}>
+                        <Package3D size={56} focused={false} />
+                    </View>
+                    <Text style={styles.emptyOrdersTitle}>No Orders Yet</Text>
+                    <Text style={styles.emptyOrdersSubtitle}>
+                        You haven't placed any orders yet.{`\n`}Start shopping to see them here!
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.shopNowButton}
+                        onPress={() => navigation.navigate('Home')}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.shopNowButtonText}>🛍️  Start Shopping</Text>
+                    </TouchableOpacity>
+                </Animated.View>
+            );
+        }
+
+        // Real orders list
+        return (
+            <View style={styles.sectionContent}>
+                {userOrders.map((order, index) => (
+                    <View key={order.id || index} style={styles.orderCardWrapper}>
+                        <View style={styles.orderLayerBack} />
+                        <View style={styles.orderLayerMiddle} />
+                        <TouchableOpacity
+                            style={styles.orderCard}
+                            onPress={() => navigation.navigate('OrderTracking', { orderId: order.orderNumber || order.id })}
+                            activeOpacity={0.88}
+                        >
+                            {/* Order Header */}
+                            <View style={styles.orderHeader}>
+                                <Text style={styles.orderId} numberOfLines={1}>
+                                    #{order.orderNumber || order.id?.toString().slice(0, 8).toUpperCase()}
+                                </Text>
+                                <Text style={styles.orderDate}>{formatOrderDate(order.creationTime)}</Text>
+                            </View>
+
+                            {/* Items count & Total */}
+                            <View style={styles.orderDetails}>
+                                <Text style={styles.orderItems}>
+                                    {order.orderItems?.length || 0} item{(order.orderItems?.length || 0) !== 1 ? 's' : ''}
+                                </Text>
+                                <Text style={styles.orderTotal}>
+                                    ${Number(order.totalAmount || 0).toFixed(2)}
+                                </Text>
+                            </View>
+
+                            {/* Product names preview */}
+                            {order.orderItems?.length > 0 && (
+                                <Text style={styles.orderItemsPreview} numberOfLines={1}>
+                                    {order.orderItems.map(i => i.productName).filter(Boolean).join(' · ')}
+                                </Text>
+                            )}
+
+                            {/* Footer: Status + Track */}
+                            <View style={styles.orderFooter}>
+                                <View style={[
+                                    styles.orderStatus,
+                                    getStatusStyle(order.status)
+                                ]}>
+                                    <Text style={styles.orderStatusText}>
+                                        {order.status || 'Processing'}
+                                    </Text>
+                                </View>
+                                {order.deliveryTrackingNumber || order.trackingCode ? (
+                                    <TouchableOpacity
+                                        style={styles.trackButton}
+                                        onPress={() => navigation.navigate('OrderTracking', { orderId: order.orderNumber || order.id })}
+                                    >
+                                        <Text style={styles.trackButtonText}>Track</Text>
+                                    </TouchableOpacity>
+                                ) : null}
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                ))}
+            </View>
+        );
+    };
 
     const renderWishlist = () => (
         <View style={styles.sectionContent}>
@@ -781,6 +926,7 @@ const ProfileScreen = ({ navigation }) => {
                                                 title: item.modalTitle || item.label,
                                                 message: item.modalMsg,
                                                 type: 'info',
+                                                iconColor: item.isLogo ? COLORS.primary : item.color,
                                                 icon: item.isLogo ? (
                                                     <Image
                                                         source={require('../assets/icons/World-Cart.png')}
@@ -853,6 +999,7 @@ const ProfileScreen = ({ navigation }) => {
                 message={modalConfig.message}
                 type={modalConfig.type}
                 icon={modalConfig.icon}
+                iconColor={modalConfig.iconColor}
                 primaryButton={modalConfig.primaryButton}
                 secondaryButton={modalConfig.secondaryButton}
             />
@@ -1249,10 +1396,19 @@ const styles = StyleSheet.create({
     statusProcessing: {
         backgroundColor: '#FFF3CD',
     },
+    statusCancelled: {
+        backgroundColor: '#FDECEA',
+    },
     orderStatusText: {
         fontSize: SIZES.body3,
         fontWeight: '600',
         color: COLORS.gray[800],
+    },
+    orderItemsPreview: {
+        fontSize: rf(11.5),
+        color: COLORS.gray[500],
+        marginBottom: 8,
+        fontStyle: 'italic',
     },
     trackButton: {
         paddingHorizontal: 16,
@@ -1264,6 +1420,96 @@ const styles = StyleSheet.create({
         color: COLORS.white,
         fontSize: SIZES.body3,
         fontWeight: '600',
+    },
+    // --- Empty Orders State ---
+    emptyOrdersContainer: {
+        alignItems: 'center',
+        paddingVertical: moderateScale(40),
+        paddingHorizontal: SIZES.padding * 2,
+    },
+    emptyOrderIconBg: {
+        width: moderateScale(110),
+        height: moderateScale(110),
+        borderRadius: moderateScale(55),
+        backgroundColor: COLORS.primary + '10',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: moderateScale(20),
+        borderWidth: 1.5,
+        borderColor: COLORS.primary + '20',
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    emptyOrdersEmoji: {
+        fontSize: 52,
+        marginBottom: 12,
+    },
+    emptyOrdersTitle: {
+        fontSize: rf(20),
+        fontWeight: '800',
+        color: COLORS.black,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    emptyOrdersSubtitle: {
+        fontSize: rf(13.5),
+        color: COLORS.gray[500],
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: moderateScale(24),
+    },
+    shopNowButton: {
+        backgroundColor: COLORS.primary,
+        paddingVertical: 14,
+        paddingHorizontal: 32,
+        borderRadius: 16,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    shopNowButtonText: {
+        color: COLORS.white,
+        fontSize: rf(15),
+        fontWeight: '700',
+        letterSpacing: 0.3,
+    },
+    retryButton: {
+        marginTop: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 28,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: COLORS.primary,
+    },
+    retryButtonText: {
+        color: COLORS.primary,
+        fontSize: rf(14),
+        fontWeight: '700',
+    },
+    // --- Skeleton Loader ---
+    orderSkeletonCard: {
+        backgroundColor: COLORS.white,
+        borderRadius: 20,
+        padding: moderateScale(18),
+        marginBottom: moderateScale(20),
+        borderWidth: 1,
+        borderColor: COLORS.gray[100],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    skeletonLine: {
+        height: 14,
+        borderRadius: 8,
+        backgroundColor: COLORS.gray[200],
+        width: '100%',
     },
     emptyWishlist: {
         alignItems: 'center',
