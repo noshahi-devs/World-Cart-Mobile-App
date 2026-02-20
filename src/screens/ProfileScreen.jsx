@@ -37,7 +37,7 @@ import { CreditCardIcon } from '../components/TabIcons';
 import { useWishlist } from '../context/WishlistContext';
 
 // Helper Component for Floating Label Input on Card
-const CardFloatingInput = ({ label, value, onChangeText, placeholder, maxLength, keyboardType, secureTextEntry, containerStyle }) => {
+const CardFloatingInput = React.forwardRef(({ label, value, onChangeText, placeholder, maxLength, keyboardType, secureTextEntry, containerStyle, ...props }, ref) => {
     const [isFocused, setIsFocused] = useState(false);
     const animatedValue = useRef(new Animated.Value(value ? 1 : 0)).current;
 
@@ -75,6 +75,7 @@ const CardFloatingInput = ({ label, value, onChangeText, placeholder, maxLength,
                 {label}
             </Animated.Text>
             <TextInput
+                ref={ref}
                 style={styles.cardFloatingInput}
                 value={value}
                 onChangeText={(text) => {
@@ -90,10 +91,11 @@ const CardFloatingInput = ({ label, value, onChangeText, placeholder, maxLength,
                 secureTextEntry={secureTextEntry}
                 placeholder={isFocused ? placeholder : ''}
                 placeholderTextColor="rgba(255,255,255,0.7)"
+                {...props}
             />
         </View>
     );
-};
+});
 
 const ProfileScreen = ({ navigation }) => {
     // Removed products from useCart - will use Wishlist API later
@@ -360,6 +362,10 @@ const ProfileScreen = ({ navigation }) => {
     const [cardBalance, setCardBalance] = useState(null);
     const [isCheckingBalance, setIsCheckingBalance] = useState(false);
 
+    // Refs for keyboard navigation
+    const expiryRef = useRef(null);
+    const cvvRef = useRef(null);
+
     // Load persisted balance on mount
     // REMOVED persistence logic per request - session only
     // useEffect(() => {
@@ -410,7 +416,7 @@ const ProfileScreen = ({ navigation }) => {
         }
     };
 
-    const renderPayments = () => (
+    const renderBalance = () => (
         <View style={styles.sectionContent}>
             {/* Payment Card UI */}
             <View style={styles.finoraCardContainer}>
@@ -462,9 +468,13 @@ const ProfileScreen = ({ navigation }) => {
                                             .replace(/(\d{4})(?=\d)/g, '$1 ');
                                         setCardDetails({ ...cardDetails, number: formattedValue });
                                     }}
+                                    returnKeyType="next"
+                                    blurOnSubmit={false}
+                                    onSubmitEditing={() => expiryRef.current?.focus()}
                                 />
                                 <View style={styles.cardRowInputs}>
                                     <CardFloatingInput
+                                        ref={expiryRef}
                                         label="VALID THRU"
                                         value={cardDetails.expiry}
                                         onChangeText={(text) => {
@@ -479,8 +489,12 @@ const ProfileScreen = ({ navigation }) => {
                                         maxLength={5}
                                         keyboardType="numeric"
                                         containerStyle={{ width: 70 }}
+                                        returnKeyType="next"
+                                        blurOnSubmit={false}
+                                        onSubmitEditing={() => cvvRef.current?.focus()}
                                     />
                                     <CardFloatingInput
+                                        ref={cvvRef}
                                         label="CVV"
                                         value={cardDetails.cvv}
                                         onChangeText={(text) => setCardDetails({ ...cardDetails, cvv: text })}
@@ -489,6 +503,7 @@ const ProfileScreen = ({ navigation }) => {
                                         keyboardType="numeric"
                                         secureTextEntry
                                         containerStyle={{ width: 50 }}
+                                        returnKeyType="done"
                                     />
                                 </View>
                             </View>
@@ -557,7 +572,7 @@ const ProfileScreen = ({ navigation }) => {
         { id: 'orders', label: 'My Orders', IconComponent: Package3D },
         { id: 'wishlist', label: 'My Wishlist', IconComponent: Heart3D },
         { id: 'address', label: 'Address', IconComponent: MapMarker3D },
-        { id: 'payments', label: 'Payments', IconComponent: CreditCard3D }
+        { id: 'Balance', label: 'Balance', IconComponent: CreditCard3D }
     ];
 
     return (
@@ -668,7 +683,7 @@ const ProfileScreen = ({ navigation }) => {
                 {activeSection === 'orders' && renderOrders()}
                 {activeSection === 'wishlist' && renderWishlist()}
                 {activeSection === 'address' && renderAddresses()}
-                {activeSection === 'payments' && renderPayments()}
+                {activeSection === 'Balance' && renderBalance()}
 
                 {/* Pro Settings Section */}
                 <View style={styles.settingsSection}>
