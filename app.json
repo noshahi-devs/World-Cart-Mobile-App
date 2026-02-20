@@ -1,7 +1,7 @@
 {
     "expo": {
-        "name": "WorldApp",
-        "slug": "world-app",
+        "name": "World Cart Mobile App",
+        "slug": "world-cart-mobile-app",
         "version": "1.0.0",
         "orientation": "portrait",
         "icon": "./assets/icon.png",
