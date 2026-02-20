@@ -382,23 +382,31 @@ const ProfileScreen = ({ navigation }) => {
 
         setIsCheckingBalance(true);
         try {
-            // Simulator API call if backend not ready, or use real service
-            // const balance = await cardService.getBalance(cardDetails.number, cardDetails.cvv, cardDetails.expiry);
+            // Real API call to check balance
+            const response = await cardService.getBalance(cardDetails.number, cardDetails.cvv, cardDetails.expiry);
 
-            // Mocking successful response for demo (since backend is shaky/offline)
-            setTimeout(async () => {
-                const mockBalance = "$2,450.00";
-                setCardBalance(mockBalance);
+            // Assume response is the balance string, e.g., "$2,450.00" or similar
+            // If response is an object, adjust accordingly. Commonly response.result for ABP methods.
+            const balance = response?.result || response;
+
+            if (balance) {
+                // Formatting balance if it's just a number
+                const formattedBalance = typeof balance === 'number'
+                    ? `$${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : balance;
+
+                setCardBalance(formattedBalance);
                 setShowBalanceInputs(false);
-                // REMOVED AsyncStorage persistence per request - session only
-                // await AsyncStorage.setItem('easyFinoraBalance', mockBalance);
                 setIsCheckingBalance(false);
                 showModal({ title: 'Success', message: 'Balance verified successfully!', type: 'success' });
-            }, 2000);
+            } else {
+                throw new Error("Invalid balance response");
+            }
 
         } catch (error) {
+            console.error(error);
             setIsCheckingBalance(false);
-            showModal({ title: 'Error', message: 'Failed to verify balance. Please try again.', type: 'error' });
+            showModal({ title: 'Error', message: 'Failed to verify balance. Please ensure the card details are correct.', type: 'error' });
         }
     };
 
@@ -523,6 +531,7 @@ const ProfileScreen = ({ navigation }) => {
                         title="Verify Balance"
                         onPress={handleCheckBalance}
                         loading={isCheckingBalance}
+                        variant="secondary"
                         style={styles.verifyBalanceBtn}
                     />
                 )
