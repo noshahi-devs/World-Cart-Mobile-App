@@ -243,7 +243,10 @@ const CartScreen = ({ navigation }) => {
                         )}
                     </View>
                     <Text style={styles.cartItemPrice}>
-                        {`$${(Number(item.price || 0) * item.quantity).toFixed(2)}${item.quantity > 1 ? ` ($${Number(item.price || 0).toFixed(2)} each)` : ''}`}
+                        ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                        {item.quantity > 1 && (
+                            <Text style={styles.unitPrice}> (${(item.price || 0).toFixed(2)} each)</Text>
+                        )}
                     </Text>
 
                     <View style={styles.cartItemActions}>
@@ -310,16 +313,16 @@ const CartScreen = ({ navigation }) => {
                         <View style={styles.cartSummary}>
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Subtotal</Text>
-                                <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+                                <Text style={styles.summaryValue}>${(subtotal || 0).toFixed(2)}</Text>
                             </View>
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Shipping</Text>
-                                <Text style={styles.summaryValue}>${shipping.toFixed(2)}</Text>
+                                <Text style={styles.summaryValue}>${(shipping || 0).toFixed(2)}</Text>
                             </View>
                             <View style={styles.divider} />
                             <View style={styles.totalRow}>
                                 <Text style={styles.totalLabel}>Total</Text>
-                                <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+                                <Text style={styles.totalValue}>${(total || 0).toFixed(2)}</Text>
                             </View>
 
                             <Button

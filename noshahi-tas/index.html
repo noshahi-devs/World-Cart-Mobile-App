@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noshahi TAS - Presentation Suite</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="presentation-nav">
+        <div class="logo">NOSHAHI <span>TAS</span></div>
+        <div class="nav-links">
+            <button onclick="showView('desktop')" id="btn-desktop" class="active">Employee Desktop App</button>
+            <button onclick="showView('admin')" id="btn-admin">Web Admin Panel</button>
+        </div>
+    </nav>
+
+    <!-- DESKTOP APP VIEW -->
+    <div id="desktop-view" class="view-container active">
+        <div class="desktop-mockup">
+            <div class="desktop-window">
+                <div class="window-title-bar">
+                    <div class="title">Noshahi TAS Client</div>
+                    <div class="window-controls">
+                        <span>—</span>
+                        <span>▢</span>
+                        <span class="close">✕</span>
+                    </div>
+                </div>
+                
+                <!-- Login State -->
+                <div id="desktop-login" class="desktop-content">
+                    <div class="login-box">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2936/2936745.png" alt="User" width="80">
+                        <h2>Welcome Back</h2>
+                        <input type="text" placeholder="Employee ID" id="emp-id">
+                        <input type="password" placeholder="Password" id="emp-pass">
+                        <button class="btn-primary" onclick="desktopAction('login')">Login</button>
+                        <p class="offline-tag"><i class="fas fa-wifi-slash"></i> Offline Login Enabled</p>
+                    </div>
+                </div>
+
+                <!-- Dashboard State -->
+                <div id="desktop-dash" class="desktop-content hidden">
+                    <div class="dash-header">
+                        <div class="status-info">
+                            <span class="status-dot online"></span> Online
+                            <span class="sync-status"><i class="fas fa-sync"></i> Synced</span>
+                        </div>
+                        <div class="user-profile">
+                            <span>John Doe</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="main-timer">
+                        <h1 id="session-timer">00:00:00</h1>
+                        <p>Work Session Total</p>
+                    </div>
+
+                    <div class="secondary-info">
+                        <div class="info-card">
+                            <span class="label">Today</span>
+                            <span class="value" id="today-total">04:12:05</span>
+                        </div>
+                        <div class="info-card">
+                            <span class="label">Break</span>
+                            <span class="value" id="break-timer">00:00:00</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="btn-checkin" class="btn-checkin" onclick="desktopAction('checkin')">CHECK IN</button>
+                        <button id="btn-checkout" class="btn-checkout hidden" onclick="desktopAction('checkout')">CHECK OUT</button>
+                        <button id="btn-break" class="btn-break hidden" onclick="desktopAction('break')">TAKE A BREAK</button>
+                        <button id="btn-resume" class="btn-resume hidden" onclick="desktopAction('resume')">RESUME WORK</button>
+                    </div>
+
+                    <div class="activity-log">
+                        <h3>Recent Activity</h3>
+                        <div class="log-item">
+                            <span class="time">09:00 AM</span>
+                            <span class="event">System Login</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL VIEW -->
+    <div id="admin-view" class="view-container" ng-app="noshahiAdmin" ng-controller="MainCtrl">
+        <div class="admin-layout">
+            <aside class="sidebar">
+                <div class="sidebar-logo">NOSHAHI <span>TAS</span></div>
+                <nav>
+                    <a href="#" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
+                    <a href="#"><i class="fas fa-users"></i> Employees</a>
+                    <a href="#"><i class="fas fa-clock"></i> Attendance</a>
+                    <a href="#"><i class="fas fa-desktop"></i> Screenshots</a>
+                    <a href="#"><i class="fas fa-cog"></i> Settings</a>
+                </nav>
+            </aside>
+            <main class="admin-main">
+                <header class="admin-header">
+                    <h1>Dashboard Overview</h1>
+                    <div class="admin-user">
+                        <span>Admin Account</span>
+                        <div class="avatar">A</div>
+                    </div>
+                </header>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Active Employees</div>
+                        <div class="stat-value">24</div>
+                        <div class="stat-change positive">+3 since morning</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg. Activity</div>
+                        <div class="stat-value">82%</div>
+                        <div class="stat-change">Optimal</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">On Break</div>
+                        <div class="stat-value">5</div>
+                        <div class="stat-change">Updated now</div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>Live Attendance</h2>
+                        <div class="filters">
+                            <input type="text" placeholder="Search employee..." ng-model="searchQuery">
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Status</th>
+                                <th>Shift Start</th>
+                                <th>Total Time</th>
+                                <th>Idle %</th>
+                                <th>Last Sync</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="user in users | filter:searchQuery">
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="mini-avatar" style="background-color: {{user.color}}">{{user.initials}}</div>
+                                        <span>{{user.name}}</span>
+                                    </div>
+                                </td>
+                                <td><span class="status-pill {{user.statusClass}}">{{user.status}}</span></td>
+                                <td>{{user.start}}</td>
+                                <td>{{user.total}}</td>
+                                <td>{{user.idle}}</td>
+                                <td>{{user.sync}}</td>
+                                <td><button class="btn-view" ng-click="viewScreenshots(user)">View</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+
+        <!-- Screenshot Modal Simulation -->
+        <div class="screenshot-modal" ng-show="showingModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Screenshots - {{selectedUser.name}}</h2>
+                    <button class="close-modal" ng-click="showingModal = false">&times;</button>
+                </div>
+                <div class="screenshot-viewer">
+                    <div class="main-img">
+                        <img src="https://hubstaff-production.s3.amazonaws.com/screenshots/example.jpg" alt="Screenshot" onerror="this.src='https://placehold.co/800x450/2c3e50/white?text=Simulated+Desktop+Screenshot'">
+                    </div>
+                    <div class="meta-sidebar">
+                        <div class="meta-item">
+                            <label>Timestamp</label>
+                            <span>14:22 PM</span>
+                        </div>
+                        <div class="meta-item">
+                            <label>Activity Score</label>
+                            <div class="progress-bar"><div class="fill" style="width: 85%"></div></div>
+                            <span>85%</span>
+                        </div>
+                        <div class="meta-item">
+                            <label>Device</label>
+                            <span>Windows-PC-01</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="thumbnail-timeline">
+                    <div class="thumb active"></div>
+                    <div class="thumb"></div>
+                    <div class="thumb"></div>
+                    <div class="thumb"></div>
+                    <div class="thumb"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

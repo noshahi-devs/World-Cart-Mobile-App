@@ -21,7 +21,7 @@ const AllCategoriesScreen = ({ navigation }) => {
         try {
             setIsLoading(true);
             setError(null);
-            const data = await catalogService.getAllCategories();
+            const data = await catalogService.getCategoriesWithListedProducts();
             setCategories(data || []);
         } catch (err) {
             console.error('Error fetching categories:', err);
@@ -39,7 +39,7 @@ const AllCategoriesScreen = ({ navigation }) => {
                     navigation.navigate('ProductList', {
                         title: item.name,
                         filterType: 'category',
-                        categoryId: item.id
+                        categoryId: item.categoryId || item.id
                     });
                 }}
             />
@@ -66,7 +66,7 @@ const AllCategoriesScreen = ({ navigation }) => {
                 <FlatList
                     data={categories}
                     renderItem={renderItem}
-                    keyExtractor={(item, index) => `${item.id}-${index}`}
+                    keyExtractor={(item, index) => `${item.categoryId || item.id}-${index}`}
                     numColumns={4}
                     contentContainerStyle={[
                         styles.listContent,

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import cartService from '../services/cartService';
 import { resolveImagePath } from '../utils/imagePathHelper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CartContext = createContext();
 
@@ -9,6 +10,8 @@ export const CartProvider = ({ children }) => {
     const { user } = useAuth(); // Get user from AuthContext
     const [cartItems, setCartItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+
+
 
     // Fetch cart from backend when user logs in
     useEffect(() => {
@@ -21,6 +24,7 @@ export const CartProvider = ({ children }) => {
     }, [user]);
 
     const fetchCartFromBackend = async () => {
+        // ... (existing cart logic remains, as it's not wishlist)
         if (!user) {
             setCartItems([]);
             return;
@@ -28,10 +32,9 @@ export const CartProvider = ({ children }) => {
         try {
             setIsLoading(true);
             const items = await cartService.getCartItems(user.id);
-            // Map backend response to frontend format
             const mappedItems = items.map(item => ({
                 id: item.storeProductId,
-                cartItemId: item.id, // Backend cart item ID
+                cartItemId: item.id,
                 title: item.productTitle,
                 name: item.productTitle,
                 image: item.productImage,
@@ -44,51 +47,57 @@ export const CartProvider = ({ children }) => {
             setCartItems(mappedItems);
         } catch (error) {
             console.error('Failed to fetch cart:', error);
-            // Keep local cart if API fails
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Wishlist is now managed by backend API
-    // Removed toggleWishlist function
+
 
     // Animation Refs
     const cartHeartsRef = React.useRef(null);
     const cartToastRef = React.useRef(null);
 
     const addToCart = async (product, quantity = 1, size = null, color = null) => {
+        // Robust ID selection: prioritize storeProductId, then id, then productId
+        const targetStoreProductId =
+            product.storeProductId ||
+            product.id ||
+            product.productId ||
+            product.store?.id ||
+            product.store?.storeProductId;
+
+        const currentUserId = user?.id || 0;
+
+        if (!targetStoreProductId || targetStoreProductId === '00000000-0000-0000-0000-000000000000') {
+            console.error('Add to Cart failed: Invalid ID detected');
+            throw new Error('Could not identify a valid product listing ID.');
+        }
+
         try {
-            // Sync with backend: pass full product so service can select best ID
-            // cartService will prioritize storeProductId but needs the user ID
-            await cartService.addToCart(product, quantity, user?.id || 0);
+            setIsLoading(true);
+            // Add to backend - pass full product so service can select best ID if needed, 
+            // but the stashed changes used targetStoreProductId. 
+            // Upstream used cartService.addToCart(product, quantity, user?.id || 0);
+            const response = await cartService.addToCart(product, quantity, currentUserId);
 
-            // Update local state - use storeProductId as the primary 'id' for consistency with fetchCartFromBackend
-            const storeProductId = product.storeProductId || product.store?.storeProductId || product.id;
-
+            // Update local state optimistically
             setCartItems(prevCart => {
                 const existingItem = prevCart.find(item =>
-                    item.id === storeProductId &&
+                    item.id === targetStoreProductId &&
                     item.size === size &&
                     item.color === color
                 );
 
                 if (existingItem) {
                     return prevCart.map(item =>
-                        (item.id === storeProductId && item.size === size && item.color === color)
+                        (item.id === targetStoreProductId && item.size === size && item.color === color)
                             ? { ...item, quantity: item.quantity + quantity }
                             : item
                     );
                 }
 
-                // For new items, ensure we store the storeProductId as 'id'
-                return [...prevCart, {
-                    ...product,
-                    id: storeProductId,
-                    quantity,
-                    size,
-                    color
-                }];
+                return [...prevCart, { ...product, id: targetStoreProductId, quantity, size, color }];
             });
 
             // Trigger animations
@@ -96,11 +105,18 @@ export const CartProvider = ({ children }) => {
             cartHeartsRef.current?.trigger(productImage);
             cartToastRef.current?.show(`${product.title || product.name || 'Product'}`);
 
-            // Refresh from backend to get accurate data (like cartItemId)
+            // Refresh from backend to sync state
             await fetchCartFromBackend();
+            return response;
         } catch (error) {
-            console.error('CartContext: Failed to add to cart:', error);
+            console.error('Add to Cart detailed error:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
             throw error;
+        } finally {
+            setIsLoading(false);
         }
     };
 

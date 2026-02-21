@@ -113,7 +113,7 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                         onPress={handleWishlistPress}
                         activeOpacity={0.8}
                     >
-                        {isWishlisted(product.productId || product.id) ? (
+                        {(product.wishlisted || isWishlisted(product.productId || product.id)) ? (
                             <HeartFilled size={18} color={COLORS.secondary} />
                         ) : (
                             <HeartOutline size={18} color={COLORS.gray[500]} />
@@ -143,10 +143,10 @@ const ProductCard = ({ product, onPress, containerStyle }) => {
                     <View style={styles.bottomSection}>
                         <View style={styles.priceRatingColumn}>
                             <View style={styles.priceContainer}>
-                                <Text style={styles.price}>${product.price ? product.price.toFixed(2) : '0.00'}</Text>
+                                <Text style={styles.price}>${(product.price || 0).toFixed(2)}</Text>
                                 {((product.originalPrice || product.oldPrice) && (product.originalPrice || product.oldPrice) !== product.price) && (
                                     <Text style={styles.oldPrice}>
-                                        {`$${(product.originalPrice || product.oldPrice).toFixed(2)}`}
+                                        {`$${(product.originalPrice || product.oldPrice || 0).toFixed(2)}`}
                                     </Text>
                                 )}
                             </View>

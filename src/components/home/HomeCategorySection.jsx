@@ -44,7 +44,7 @@ const HomeCategorySection = ({ categories = [], onCategoryPress, onSeeAllPress }
                 showsHorizontalScrollIndicator={false}
 
                 renderItem={renderCategoryItem}
-                keyExtractor={(item, index) => `${item.id}-${index}`}
+                keyExtractor={(item, index) => `${item.categoryId || item.id}-${index}`}
                 contentContainerStyle={styles.categoriesContent}
             />
         </View>

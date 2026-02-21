@@ -133,7 +133,8 @@ const SplashScreen = ({ onFinish }) => {
 
             {/* BRAND TEXT */}
             <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
-                <Text style={styles.brand}>WORLD-CART</Text><Text style={styles.tagline}>Your Global Marketplace</Text>
+                <Text style={styles.brand}>WORLD-CART</Text>
+                <Text style={styles.tagline}>Your Global Marketplace</Text>
             </Animated.View>
 
             {/* CART ICON */}

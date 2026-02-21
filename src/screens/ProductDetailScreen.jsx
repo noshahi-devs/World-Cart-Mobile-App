@@ -237,7 +237,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
             <Header
                 title=""
                 leftIcon="arrow-left"
-                rightIcon={isWishlisted(product.productId || product.id) ? "heart" : "heart-outline"}
+                rightIcon={(product.wishlisted || isWishlisted(product.productId || product.id)) ? "heart" : "heart-outline"}
                 onLeftPress={() => navigation.goBack()}
                 onRightPress={handleWishlistToggle}
             />
@@ -305,16 +305,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
                         {/* Brand & Stock Header */}
                         <View style={styles.headerRow}>
-                            <View style={styles.brandLine}>
-                                <Text style={styles.brandName}>
-                                    <Text>{product.brandName || 'Unknown Brand'}</Text>
-                                    <Text>{' • '}</Text>
-                                </Text>
-                                <Text style={styles.soldByText}>
-                                    <Text>{'Sold by '}</Text>
-                                    <Text>{product.store?.storeName || 'Merchant'}</Text>
-                                </Text>
-                            </View>
+                            <Text style={styles.brandLine} numberOfLines={1}>
+                                <Text style={styles.brandName}>{product.brandName || 'Unknown Brand'}</Text><Text style={styles.brandSeparator}> • </Text><Text style={styles.soldByText}>Sold by {product.store?.storeName || 'Merchant'}</Text>
+                            </Text>
                             <View style={[styles.stockIndicator, { backgroundColor: (stockQuantity > 0) ? COLORS.success + '15' : COLORS.error + '15' }]}>
                                 <Text style={[styles.stockText, { color: (stockQuantity > 0) ? COLORS.success : COLORS.error }]}>
                                     {stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
@@ -328,14 +321,8 @@ const ProductDetailScreen = ({ route, navigation }) => {
                         {product.slug ? <Text style={styles.reviewText}>{product.slug}</Text> : null}
 
                         <View style={styles.priceContainer}>
-                            <Text style={styles.price}>
-                                <Text>{`$${Number(currentPrice || 0).toFixed(2)}`}</Text>
-                            </Text>
-                            {!!originalPrice && (
-                                <Text style={styles.oldPrice}>
-                                    <Text>{`$${Number(originalPrice || 0).toFixed(2)}`}</Text>
-                                </Text>
-                            )}
+                            <Text style={styles.price}>${(currentPrice || 0).toFixed(2)}</Text>
+                            {!!originalPrice && <Text style={styles.oldPrice}>${(originalPrice || 0).toFixed(2)}</Text>}
                             {!!discount && (
                                 <View style={styles.discountTag}>
                                     <Text style={styles.discountTagText}>
@@ -347,14 +334,12 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
                         {/* Rating with 3D stars */}
                         <View style={styles.ratingContainer}>
-                            <Star3D size={20} color="#FFD700" focused />
-                            <View style={styles.ratingText}>
-                                <Text style={styles.ratingValue}>
-                                    <Text>{`${product.rating || '4.5'} `}</Text>
-                                    <Text style={styles.bulletSeparator}>{'• '}</Text>
-                                    <Text style={styles.reviewText}>{`${product.reviews || '345'} Verified Reviews`}</Text>
-                                </Text>
+                            <View>
+                                <Star3D size={20} color="#FFD700" focused />
                             </View>
+                            <Text style={styles.ratingText}>
+                                <Text style={styles.ratingValue}>{product.rating || '4.5'}</Text><Text style={styles.brandSeparator}> • </Text><Text style={styles.reviewText}>{product.reviews || '345'} Verified Reviews</Text>
+                            </Text>
                         </View>
 
                         {/* Description */}

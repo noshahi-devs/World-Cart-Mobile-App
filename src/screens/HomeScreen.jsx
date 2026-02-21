@@ -52,8 +52,8 @@ const HomeScreen = ({ navigation }) => {
         try {
             setIsLoading(true);
             const [cats, prods] = await Promise.all([
-                catalogService.getAllCategories(),
-                catalogService.getProductsForHome()
+                catalogService.getCategoriesWithListedProducts(),
+                catalogService.getProductsForHome(0, 24) // Using the GetAllProductsForCards endpoint
             ]);
             setLiveCategories(cats || []);
             setLiveProducts(prods || []);
@@ -108,7 +108,7 @@ const HomeScreen = ({ navigation }) => {
         navigation.navigate('ProductList', {
             title: category.name || category.title,
             filterType: 'category',
-            categoryId: category.id
+            categoryId: category.categoryId || category.id
         });
     };
 

@@ -11,7 +11,11 @@ export const catalogService = {
             if (data.result) return data.result.items || data.result;
             return data.items || data;
         } catch (error) {
-            console.error('Error fetching categories:', error);
+            console.error('Error fetching categories:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
             throw error;
         }
     },
@@ -25,7 +29,63 @@ export const catalogService = {
             if (data.result) return data.result.items || data.result;
             return data.items || data;
         } catch (error) {
-            console.error('Error fetching home products:', error);
+            console.error('Error fetching home products:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
+            throw error;
+        }
+    },
+
+    getCategoriesWithListedProducts: async () => {
+        try {
+            const response = await apiClient.get('/api/services/app/Homepage/GetCategoriesWithListedProducts');
+            const data = response.data;
+            if (data.result) return data.result;
+            return data;
+        } catch (error) {
+            console.error('Error fetching categories with products:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
+            throw error;
+        }
+    },
+
+    getProductListingsAcrossStores: async (skipCount = 0, maxResultCount = 20) => {
+        try {
+            const response = await apiClient.get('/api/services/app/Homepage/GetProductListingsAcrossStores', {
+                params: { skipCount, maxResultCount }
+            });
+            const data = response.data;
+            if (data.result) return data.result;
+            return data;
+        } catch (error) {
+            console.error('Error fetching cross-store product listings:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
+            throw error;
+        }
+    },
+
+    getProductsByStore: async (storeId, skipCount = 0, maxResultCount = 20) => {
+        try {
+            const response = await apiClient.get('/api/services/app/Homepage/GetProductsByStore', {
+                params: { storeId, skipCount, maxResultCount }
+            });
+            const data = response.data;
+            if (data.result) return data.result;
+            return data;
+        } catch (error) {
+            console.error('Error fetching products by store:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
             throw error;
         }
     },

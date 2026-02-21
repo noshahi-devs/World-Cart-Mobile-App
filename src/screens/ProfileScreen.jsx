@@ -178,8 +178,6 @@ const ProfileScreen = ({ navigation }) => {
             setOrdersLoading(false);
         }
     };
-
-
     // Animations for Guest View
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
@@ -292,6 +290,7 @@ const ProfileScreen = ({ navigation }) => {
                 </View>
             );
         }
+
 
         // Error state
         if (ordersError) {

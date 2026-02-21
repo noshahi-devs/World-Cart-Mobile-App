@@ -27,9 +27,8 @@ const ProductListScreen = ({ route, navigation }) => {
             setIsLoading(true);
             setError(null);
 
-            // TODO: Implement category-specific API endpoint
-            // For now, fetch all products and filter client-side
-            const data = await catalogService.getProductsForHome(0, 100);
+            // Fetch more products (up to 100) and filter client-side for now
+            const data = await catalogService.getProductListingsAcrossStores(0, 100);
             setProducts(data || []);
         } catch (err) {
             console.error('Error fetching products:', err);
@@ -108,7 +107,7 @@ const ProductListScreen = ({ route, navigation }) => {
                 <FlatList
                     data={filteredProducts}
                     renderItem={renderItem}
-                    keyExtractor={item => item.id || item.productId}
+                    keyExtractor={(item, index) => `${item.id || item.productId || item.storeProductId}-${index}`}
                     numColumns={2}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={[

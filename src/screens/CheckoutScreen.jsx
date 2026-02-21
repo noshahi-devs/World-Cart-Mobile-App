@@ -170,7 +170,7 @@ const CheckoutScreen = ({ navigation }) => {
         setModalConfig({
             type: 'confirm',
             title: 'Confirm Order',
-            message: `Place order for $${total.toFixed(2)}?\n\nYour order will be processed immediately.`,
+            message: `Place order for $${(total || 0).toFixed(2)}?\n\nYour order will be processed immediately.`,
             primaryButton: {
                 text: 'Place Order',
                 onPress: async () => {
@@ -481,7 +481,7 @@ const CheckoutScreen = ({ navigation }) => {
                     />
                 </View>
             </View>
-        </ScrollView>
+        </ScrollView >
     );
 
     const renderStep3 = () => (
@@ -542,11 +542,11 @@ const CheckoutScreen = ({ navigation }) => {
                                     {`${item.size || 'N/A'} • ${item.color || 'No Color'}`}
                                 </Text>
                                 <Text style={styles.summaryItemQuantity}>
-                                    {`Qty: ${item.quantity}${item.quantity > 1 ? ` (@ $${Number(item.price || 0).toFixed(2)})` : ''}`}
+                                    Qty: {item.quantity} {item.quantity > 1 && <Text style={styles.summaryItemUnit}> (@ ${(item.price || 0).toFixed(2)})</Text>}
                                 </Text>
                             </View>
                             <Text style={styles.summaryItemPrice}>
-                                ${(Number(item.price || 0) * item.quantity).toFixed(2)}
+                                ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
                             </Text>
                         </View>
                     ))}
@@ -560,15 +560,15 @@ const CheckoutScreen = ({ navigation }) => {
                 <View style={[styles.card3DContent, styles.orderSummary3D]}>
                     <View style={styles.orderItem}>
                         <Text style={styles.orderItemText}>Subtotal</Text>
-                        <Text style={styles.orderItemPrice}>${subtotal.toFixed(2)}</Text>
+                        <Text style={styles.orderItemPrice}>${(subtotal || 0).toFixed(2)}</Text>
                     </View>
                     <View style={styles.orderItem}>
                         <Text style={styles.orderItemText}>Shipping</Text>
-                        <Text style={styles.orderItemPrice}>${shipping.toFixed(2)}</Text>
+                        <Text style={styles.orderItemPrice}>${(shipping || 0).toFixed(2)}</Text>
                     </View>
                     <View style={styles.orderItem}>
                         <Text style={styles.orderItemText}>Tax (8%)</Text>
-                        <Text style={styles.orderItemPrice}>${tax.toFixed(2)}</Text>
+                        <Text style={styles.orderItemPrice}>${(tax || 0).toFixed(2)}</Text>
                     </View>
                     {paymentMethod === 'cod' && (
                         <View style={styles.orderItem}>
@@ -579,7 +579,7 @@ const CheckoutScreen = ({ navigation }) => {
                     <View style={styles.totalItem}>
                         <Text style={styles.totalItemText}>Total</Text>
                         <Text style={styles.totalItemPrice}>
-                            ${(paymentMethod === 'cod' ? Number(total || 0) + 2 : Number(total || 0)).toFixed(2)}
+                            ${((paymentMethod === 'cod' ? total + 2 : total) || 0).toFixed(2)}
                         </Text>
                     </View>
                 </View>
